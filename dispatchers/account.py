@@ -1,7 +1,4 @@
 from enum import IntFlag
-import uuid
-import time
-
 
 class UserRole(IntFlag):
     NONE = 0
@@ -9,7 +6,6 @@ class UserRole(IntFlag):
     IS_ORGANIZER = 2
     IS_TEAM = 4
     IS_JURY = 8
-
 
 class User:
     def __init__(self, id: str, name: str, email: str, role: UserRole, created_at: int):
