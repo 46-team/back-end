@@ -12,8 +12,8 @@ class UserRole(IntFlag):
 
 
 class User:
-    def __init__(self, user_id: str, name: str, email: str, role: UserRole, created_at: int):
-        self.id = user_id
+    def __init__(self, id: str, name: str, email: str, role: UserRole, created_at: int):
+        self.id = id
         self.name = name
         self.email = email
         self.role = role
