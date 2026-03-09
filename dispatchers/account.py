@@ -1,5 +1,6 @@
 from enum import IntFlag
 
+
 class UserRole(IntFlag):
     NONE = 0
     IS_ADMIN = 1
@@ -7,7 +8,9 @@ class UserRole(IntFlag):
     IS_TEAM = 4
     IS_JURY = 8
 
+
 class User:
+
     def __init__(self, id: str, name: str, email: str, role: UserRole, created_at: int):
         self.id = id
         self.name = name

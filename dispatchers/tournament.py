@@ -1,5 +1,6 @@
 from enum import IntFlag
 
+
 class TournamentStatus(IntFlag):
     NONE = 0
     IS_DRAFT = 1
@@ -7,8 +8,10 @@ class TournamentStatus(IntFlag):
     IS_RUNNING = 4
     IS_FINISHED = 8
 
+
 class Tournament:
-    def __init__(self, id: str, title: str, desc: str, status: TournamentStatus, start_date: int, finish_date: int, max_teams: int|None, rounds: list|None):
+    def __init__(self, id: str, title: str, desc: str, status: TournamentStatus, start_date: int, finish_date: int,
+                 max_teams: int | None, rounds: list | None):
         self.id = id
         self.title = title
         self.desc = desc
@@ -41,4 +44,3 @@ class Tournament:
 
     async def del_round(self):
         pass
-
