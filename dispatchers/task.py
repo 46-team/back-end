@@ -1,6 +1,5 @@
 from enum import IntFlag
 from uuid import UUID
-
 from account import User
 
 
