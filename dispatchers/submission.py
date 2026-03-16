@@ -8,7 +8,7 @@ class SubmissionStatus(IntFlag):
     IS_DRAFT = 1
     IS_SUBMITTED = 2
     IS_LOCKED = 4
-
+    IS_EVALUATED = 8
 
 class Submission:
     def __init__(self, id: int, team: Team, round: Round, description: str, submitted_at: int,

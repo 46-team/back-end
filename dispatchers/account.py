@@ -7,7 +7,7 @@ class UserRole(IntFlag):
     IS_ORGANIZER = 2
     IS_TEAM = 4
     IS_JURY = 8
-
+    IS_AUTHOR = 16
 
 class User:
 

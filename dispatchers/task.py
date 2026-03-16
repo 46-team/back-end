@@ -9,6 +9,7 @@ class TaskStatus(IntFlag):
     IS_NEW = 2
     IS_CLOSED = 4
     IS_DRAFT = 8
+    IS_PUBLIC = 16
 
 
 class TaskInfo:

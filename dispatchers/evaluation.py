@@ -18,9 +18,11 @@ class EvaluationCriterion(IntFlag):
 
 
 class Score:
-    def __init__(self, criterion: EvaluationCriterion, value: int):
+    def __init__(self, criterion: EvaluationCriterion, value: int, maxvalue: int = 10, comment: str | None = None):
         self._criterion = criterion
         self._value = value
+        self._comment = comment
+        self._maxvalue = maxvalue
 
     @property
     def criterion(self):
@@ -29,6 +31,14 @@ class Score:
     @property
     def value(self):
         return self._value
+
+    @property
+    def comment(self):
+        return self._comment
+
+    @property
+    def maxvalue(self):
+        return self._maxvalue
 
 
 class Evaluation:
