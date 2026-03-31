@@ -1,3 +1,110 @@
-fastapi
-uvicorn
-uvicorn[standard]
+const crypto = require("crypto");
+const { USER_DB, SESSION, TOKEN_DB } = require("./register_account");
+
+class resume_session {
+    static async resume_session(data) {
+        const token = data?.token;
+        const oldDeviceToken = data?.device_token;
+
+        if (!token || !oldDeviceToken) {
+            return {
+                is_ok: false,
+                type: "resume-session",
+                error_code: "#MISSING_FIELDS",
+                error_message: "Token or device_token is important"
+            };
+        }
+
+        
+        const userId = TOKEN_DB[token];
+
+        if (!userId) {
+            return {
+                is_ok: false,
+                type: "resume-session",
+                error_code: "#INVALID_TOKEN",
+                error_message: "Token is invalid"
+            };
+        }
+
+        
+        const oldSession = SESSION[oldDeviceToken];
+
+        if (!oldSession) {
+            return {
+                is_ok: false,
+                type: "resume-session",
+                error_code: "#SESSION_NOT_FOUND",
+                error_message: "Session not found"
+            };
+        }
+
+        
+        if (oldSession.user_id !== userId) {
+            return {
+                is_ok: false,
+                type: "resume-session",
+                error_code: "#SESSION_ACCESS_DENIED",
+                error_message: "This session does not belong to this user"
+            };
+        }
+
+        
+        if (oldSession.connected === true) {
+            return {
+                is_ok: false,
+                type: "resume-session",
+                error_code: "#SESSION_NOT_DISCONNECTED",
+                error_message: "Session was not disconnected before"
+            };
+        }
+
+        
+        let user = null;
+
+        for (const email in USER_DB) {
+            const userRecord = USER_DB[email];
+            if (userRecord.user.id === userId) {
+                user = userRecord.user;
+                break;
+            }
+        }
+
+        if (!user) {
+            return {
+                is_ok: false,
+                type: "resume-session",
+                error_code: "#USER_NOT_FOUND",
+                error_message: "User not found"
+            };
+        }
+
+        
+        const newDeviceToken = crypto.randomUUID();
+
+        
+        delete SESSION[oldDeviceToken];
+
+        
+        SESSION[newDeviceToken] = {
+            user_id: user.id,
+            connected: true,
+            created_at: Date.now(),
+            disconnected_at: null
+        };
+
+        return {
+            is_ok: true,
+            type: "resume-session",
+            data: {
+                new_device_token: newDeviceToken,
+                user: {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    role: Number(user.role)
+                }
+            }
+        }
+    }
+}
