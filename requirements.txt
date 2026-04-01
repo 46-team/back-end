@@ -1,114 +1,99 @@
+from typing import Optional
+import uuid
+import time
 
-fastapi
-uvicorn
-uvicorn[standard]
-const crypto = require("crypto");
-const { USER_DB, SESSION, TOKEN_DB } = require("./register_account");
+USER_DB = {}
+SESSION = {}
+TOKEN_DB = {}
 
-class resume_session {
-    static async resume_session(data) {
-        const token = data?.token;
-        const oldDeviceToken = data?.device_token;
+class ResumeSession:
+    @staticmethod
+    def resume_session(data: dict) -> dict:
+        token: Optional[str] = data.get("token")
+        old_device_token: Optional[str] = data.get("device_token")
 
-        if (!token || !oldDeviceToken) {
+        if not token or not old_device_token:
             return {
-                is_ok: false,
-                type: "resume-session",
-                error_code: "#MISSING_FIELDS",
-                error_message: "Token or device_token is important"
-            };
-        }
-
-        
-        const userId = TOKEN_DB[token];
-
-        if (!userId) {
-            return {
-                is_ok: false,
-                type: "resume-session",
-                error_code: "#INVALID_TOKEN",
-                error_message: "Token is invalid"
-            };
-        }
-
-        
-        const oldSession = SESSION[oldDeviceToken];
-
-        if (!oldSession) {
-            return {
-                is_ok: false,
-                type: "resume-session",
-                error_code: "#SESSION_NOT_FOUND",
-                error_message: "Session not found"
-            };
-        }
-
-        
-        if (oldSession.user_id !== userId) {
-            return {
-                is_ok: false,
-                type: "resume-session",
-                error_code: "#SESSION_ACCESS_DENIED",
-                error_message: "This session does not belong to this user"
-            };
-        }
-
-        
-        if (oldSession.connected === true) {
-            return {
-                is_ok: false,
-                type: "resume-session",
-                error_code: "#SESSION_NOT_DISCONNECTED",
-                error_message: "Session was not disconnected before"
-            };
-        }
-
-        
-        let user = null;
-
-        for (const email in USER_DB) {
-            const userRecord = USER_DB[email];
-            if (userRecord.user.id === userId) {
-                user = userRecord.user;
-                break;
+                "is_ok": False,
+                "type": "resume-session",
+                "error_code": "#MISSING_FIELDS",
+                "error_message": "Token or device_token is important"
             }
-        }
 
-        if (!user) {
+        user_id = TOKEN_DB.get(token)
+
+        if not user_id:
             return {
-                is_ok: false,
-                type: "resume-session",
-                error_code: "#USER_NOT_FOUND",
-                error_message: "User not found"
-            };
+                "is_ok": False,
+                "type": "resume-session",
+                "error_code": "#INVALID_TOKEN",
+                "error_message": "Token is invalid"
+            }
+
+        old_session = SESSION.get(old_device_token)
+
+        if not old_session:
+            return {
+                "is_ok": False,
+                "type": "resume-session",
+                "error_code": "#SESSION_NOT_FOUND",
+                "error_message": "Session not found"
+            }
+
+        if old_session.get("user_id") != user_id:
+            return {
+                "is_ok": False,
+                "type": "resume-session",
+                "error_code": "#SESSION_ACCESS_DENIED",
+                "error_message": "This session does not belong to this user"
+            }
+
+        if old_session.get("connected") is True:
+            return {
+                "is_ok": False,
+                "type": "resume-session",
+                "error_code": "#SESSION_NOT_DISCONNECTED",
+                "error_message": "Session was not disconnected before"
+            }
+
+        user = None
+
+        for email, user_record in USER_DB.items():
+            if user_record.get("user", {}).get("id") == user_id:
+                user = user_record.get("user")
+                break
+
+        if not user:
+            return {
+                "is_ok": False,
+                "type": "resume-session",
+                "error_code": "#USER_NOT_FOUND",
+                "error_message": "User not found"
+            }
+
+        new_device_token = str(uuid.uuid4())
+
+        del SESSION[old_device_token]
+
+        SESSION[new_device_token] = {
+            "user_id": user.get("id"),
+            "connected": True,
+            "created_at": int(time.time() * 1000),
+            "disconnected_at": None
         }
 
-        
-        const newDeviceToken = crypto.randomUUID();
-
-        
-        delete SESSION[oldDeviceToken];
-
-        
-        SESSION[newDeviceToken] = {
-            user_id: user.id,
-            connected: true,
-            created_at: Date.now(),
-            disconnected_at: null
-        };
+        role = user.get("role")
 
         return {
-            is_ok: true,
-            type: "resume-session",
-            data: {
-                new_device_token: newDeviceToken,
-                user: {
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    role: Number(user.role)
+            "is_ok": True,
+            "type": "resume-session",
+            "data": {
+                "new_device_token": new_device_token,
+                "user": {
+                    "id": user.get("id"),
+                    "name": user.get("name"),
+                    "email": user.get("email"),
+                    "role": int(role) if role is not None else 0
                 }
             }
         }
-    }
-}
