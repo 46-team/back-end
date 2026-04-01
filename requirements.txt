@@ -1,3 +1,7 @@
+
+fastapi
+uvicorn
+uvicorn[standard]
 const crypto = require("crypto");
 const { USER_DB, SESSION, TOKEN_DB } = require("./register_account");
 
