@@ -2,14 +2,13 @@ import uuid
 import time
 import re
 from account import User, UserRole
-# imitation of Data Base
-USER_DB = {}
-SESSION = {}
+from main import USER_DB, SESSION
 
-class Register_Accaount:
+
+class Register_Account:
     @staticmethod
     def validate_name(name: str) -> bool:
-        return 3 <= len(name) <= 50
+        return 3 <= len(name) <= 13
 
     @staticmethod
     def validate_password(password: str) -> bool:
@@ -35,14 +34,14 @@ class Register_Accaount:
                 "error_message": "Email or password or name are required"
             }
         
-        if not Register_Accaount.validate_name(name):
+        if not Register_Account.validate_name(name):
             return {
                 "is_ok": False,
                 "error_code": "#INVALID_NAME",
                 "error_message": "Name must be from 3 to 50"
             }
 
-        if not Register_Accaount.validate_password(password):
+        if not Register_Account.validate_password(password):
             return {
                 "is_ok": False,
                 "error_code": "#WEAK_PASSWORD",
@@ -58,6 +57,7 @@ class Register_Accaount:
             name=name, 
             email=email,
             role=UserRole(role),
+            password = password,
             created_at=int(time.time())
         )
 
@@ -70,7 +70,6 @@ class Register_Accaount:
                 "user_id": new_user.id,
                 "name": new_user.name,
                 "email": new_user.email,
-                "status": "success",
                 "message": "Account registered successfully"
             }
         }

@@ -21,3 +21,7 @@ async def websocket_endpoint(websocket: WebSocket):
         manager.disconnect(websocket)
 
 uvicorn.run(app, host="0.0.0.0", port=8000)
+
+# imitation of Data Base
+USER_DB = {}
+SESSION = {}
