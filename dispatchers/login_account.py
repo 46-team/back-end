@@ -1,7 +1,7 @@
 import uuid
 import time
 from account import User, UserRole
-from register_account import USER_DB, SESSION
+from main import USER_DB, SESSION
 
 class Login_account:
     @staticmethod
