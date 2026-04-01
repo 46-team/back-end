@@ -3,7 +3,7 @@ import time
 from account import User, UserRole
 from register_account import USER_DB, SESSION
 
-class login_account:
+class Login_account:
     @staticmethod
     async def login_account(data: dict):
         email = data.get("email")
@@ -14,7 +14,7 @@ class login_account:
             return {
                 "is_ok": False,
                 "error_code": "#MISSING_FIELDS",
-                "error_message": "Email, password or device_token is important"
+                "error_message": "All fields are mandatory"
             }
 
         
@@ -27,22 +27,20 @@ class login_account:
                 "error_message": "Wrong password or email"
             }
 
-        user = user_record["user"]
+        user_instance: User = user_record["user"]
 
         
-        SESSION[device_token] = user.id
+        SESSION[device_token] = user_instance.id
 
         return {
             "is_ok": True,
             "type": "login-account",
             "data": {
                 "user": {
-                    "id": user.id,
-                    "name": user.name,
-                    "email": user.email,
-                    "role": int(user.role)
+                    "id": user_instance.id,
+                    "name": user_instance.name,
+                    "email": user_instance.email,
+                    "role": int(user_instance.role)
                 },
-                "device_token": device_token,
-                "status": "logged_in"
             }
         }
