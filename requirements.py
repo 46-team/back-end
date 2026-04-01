@@ -1,6 +1,3 @@
-fastapi
-uvicorn
-uvicorn[standard]
 from typing import Optional
 import uuid
 import time
