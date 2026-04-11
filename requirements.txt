@@ -1,0 +1,6 @@
+fastapi
+aiofiles
+motor~=2.5.1
+uvicorn
+pymongo~=3.12.3
+uvicorn[standard]
