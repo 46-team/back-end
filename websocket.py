@@ -6,11 +6,12 @@ import time
 from cryptography.hazmat.primitives import serialization
 from fastapi import FastAPI
 from starlette.websockets import WebSocket, WebSocketDisconnect
-
 from dispatchers.authentication import auth
 from dispatchers.utils.error_templates import err_unknown_request
 from dispatchers.utils.utils import find_token_by_websocket
 from dispatchers.utils import FGProto as fgproto
+from dispatchers.authentication.get_me import get_me_handler
+from dispatchers.tournament.create import create_tournament_handler
 app = FastAPI()
 active_connections = set()
 ENCRYPTION_KEYS = {}
@@ -31,10 +32,16 @@ async def message_handler(websocket: WebSocket, message: str):
     elif message['type'] == "echo":
         await proto.send_message({"is_ok": True, "type": "echo", "message": message['message']},
                                  ENCRYPTION_KEYS[websocket]['key'])
+    elif message['type'] == "get_me":
+        await get_me_handler(
+            client=websocket,
+            message=message,
+            USER_TOKENS=USER_TOKENS,
+            proto=proto,
+            ENCRYPTION_KEYS=ENCRYPTION_KEYS
+        )
         
     elif message['type'] == "create_tournament":
-        from dispatchers.tournament.create import create_tournament_handler
-
         await create_tournament_handler(
             client=websocket,
             message=message,
@@ -45,8 +52,6 @@ async def message_handler(websocket: WebSocket, message: str):
         )
     else:
         await err_unknown_request(proto=proto, ENCRYPTION_KEYS=ENCRYPTION_KEYS, client=websocket)
-
-
 
 
 @app.websocket("/apiws")
