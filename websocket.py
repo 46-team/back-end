@@ -31,6 +31,18 @@ async def message_handler(websocket: WebSocket, message: str):
     elif message['type'] == "echo":
         await proto.send_message({"is_ok": True, "type": "echo", "message": message['message']},
                                  ENCRYPTION_KEYS[websocket]['key'])
+        
+    elif message['type'] == "create_tournament":
+        from dispatchers.tournament.create import create_tournament_handler
+
+        await create_tournament_handler(
+            client=websocket,
+            message=message,
+            db=db,
+            USER_TOKENS=USER_TOKENS,
+            proto=proto,
+            ENCRYPTION_KEYS=ENCRYPTION_KEYS
+        )
     else:
         await err_unknown_request(proto=proto, ENCRYPTION_KEYS=ENCRYPTION_KEYS, client=websocket)
 
