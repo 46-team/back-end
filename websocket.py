@@ -36,6 +36,10 @@ async def message_handler(websocket: WebSocket, message: str):
         await get_me_handler(
             client=websocket,
             message=message,
+            USER_TOKENS=USER_TOKENS,
+            proto=proto,
+            ENCRYPTION_KEYS=ENCRYPTION_KEYS
+        )
         
     elif message['type'] == "create_tournament":
         await create_tournament_handler(
