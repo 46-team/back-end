@@ -11,7 +11,7 @@ from dispatchers.utils.error_templates import err_unknown_request
 from dispatchers.utils.utils import find_token_by_websocket
 from dispatchers.utils import FGProto as fgproto
 from dispatchers.authentication.get_me import get_me_handler
-from dispatchers.tournament.create import create_tournament_handler
+from dispatchers.tournaments.create import create_tournament_handler
 app = FastAPI()
 active_connections = set()
 ENCRYPTION_KEYS = {}
