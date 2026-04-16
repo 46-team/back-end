@@ -6,7 +6,7 @@ import uvicorn
 from websocket import app
 
 client = motor.motor_asyncio.AsyncIOMotorClient(
-    f"mongodb://{env_data['SERVER_DB_IP']}:{env_data['SERVER_DB_PORT']}/"
+    f"mongodb://{env_data['SERVER_DB_USERNAME']}:{env_data['SERVER_DB_PASSWORD']}@{env_data['SERVER_DB_IP']}:{env_data['SERVER_DB_PORT']}/"
 )
 db = client[env_data["SERVER_DB_NAME"]]
 
