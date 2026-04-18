@@ -50,6 +50,19 @@ async def message_handler(websocket: WebSocket, message: str):
             proto=proto,
             ENCRYPTION_KEYS=ENCRYPTION_KEYS
         )
+
+    elif message['type'] == "get_tournaments":
+        from dispatchers.tournaments.get_all import get_tournaments_handler
+
+        await get_tournaments_handler(
+            client=websocket,
+            message=message,
+            db=db,
+            USER_TOKENS=USER_TOKENS,
+            proto=proto,
+            ENCRYPTION_KEYS=ENCRYPTION_KEYS
+    )
+
     else:
         await err_unknown_request(proto=proto, ENCRYPTION_KEYS=ENCRYPTION_KEYS, client=websocket)
 

@@ -26,3 +26,16 @@ class TournamentService:
 
         tournament["_id"] = str(result.inserted_id)
         return tournament
+    
+    @staticmethod
+    async def get_tournaments(db):
+        tournaments_cursor = db["tournaments"].find({})
+
+        tournaments = []
+        async for tournament in tournaments_cursor:
+            if "_id" in tournament:
+                del tournament["_id"]
+
+            tournaments.append(tournament)
+
+        return tournaments
