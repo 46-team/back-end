@@ -2,6 +2,7 @@ import hashlib
 import uuid
 from fastapi import WebSocket
 import dispatchers.utils.FGProto as FGProto
+from websocket import save_tokens
 from dispatchers.utils.error_templates import (
     err_unknown_mode,
     err_user_already_exists,
@@ -20,7 +21,7 @@ async def server_register(
     save_tokens: any
 ) -> None:
     
-    if not message.get('login') or not message.get('password') or not message.get('first_name'):
+    if not message.get('login') or not message.get('password') or not message.get('full_name'):
         await err_incompl_request(proto=proto, ENCRYPTION_KEYS=ENCRYPTION_KEYS, client=client)
         return
 
@@ -36,7 +37,7 @@ async def server_register(
         return
 
     
-    existing_user = await db['users'].find_one({"login": message['login']})
+    existing_user = await db['users'].find_one({"login": message['login'], "email": message['email']})
     if existing_user:
         await err_user_already_exists(proto=proto, ENCRYPTION_KEYS=ENCRYPTION_KEYS, client=client)
         return
@@ -65,11 +66,12 @@ async def server_register_create_user(
     user_doc = {
         "email":      message.get('email', '').strip(),
         "full_name":   message.get('full_name', '').strip(),
-        "password":   message['password'],         
+        "password":   message['password'],
+        "role": message['role']         
     }
 
     result = await db['users'].insert_one(user_doc)
-
+    user_doc['_id'] = result['_id']
 
     token = hashlib.sha256(uuid.uuid4().hex.encode('utf-8')).hexdigest()
     USER_TOKENS[token] = [
@@ -81,17 +83,13 @@ async def server_register_create_user(
     ]
     await save_tokens()
 
-   
-    userr = user_doc.copy()
-    userr['id'] = str(result.inserted_id)
-
     await proto.send_message(
         {
             "is_ok":     True,
-            "type":      "auth",
+            "type":      "register_account",
             "token":     token,
             "auth_mode": "register",
-            "user":      userr
+            "user":      user_doc
         },
         ENCRYPTION_KEYS[client]['key']
     )
