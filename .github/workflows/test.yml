@@ -29,9 +29,15 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Run app (5s timeout)
+        env:
+          SERVER_DB_IP: ${{ secrets.SERVER_DB_IP }}
+          SERVER_DB_NAME: ${{ secrets.SERVER_DB_NAME }}
+          SERVER_DB_PASSWORD: ${{ secrets.SERVER_DB_PASSWORD }}
+          SERVER_DB_PORT: ${{ secrets.SERVER_DB_PORT }}
+          SERVER_DB_USERNAME: ${{ secrets.SERVER_DB_USERNAME }}
         run: |
           timeout 5s python main.py || code=$?
-          
+
           if [ "$code" -ne 0 ] && [ "$code" -ne 124 ]; then
             exit $code
           fi
