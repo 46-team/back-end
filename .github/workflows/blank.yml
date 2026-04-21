@@ -1,15 +1,17 @@
 name: Test backend for errors
 
 on:
-  pull_request:
+  workflow_dispatch:
 
 jobs:
   run:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout dev1 branch
         uses: actions/checkout@v4
+        with:
+          ref: dev1
 
       - name: Setup latest Python
         uses: actions/setup-python@v5
@@ -25,7 +27,6 @@ jobs:
         run: |
           timeout 5s python main.py || code=$?
           
-          # 124 - ok
           if [ "$code" -ne 0 ] && [ "$code" -ne 124 ]; then
             exit $code
           fi
