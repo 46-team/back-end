@@ -62,6 +62,18 @@ async def message_handler(websocket: WebSocket, message: str):
             proto=proto,
             ENCRYPTION_KEYS=ENCRYPTION_KEYS
     )
+    elif message['type'] == "register_account":
+        from dispatchers.authentication.register_account import server_register
+
+        await server_register(
+        client=websocket,
+        message=message,
+        db=db,
+        USER_TOKENS=USER_TOKENS,
+        proto=proto,
+        ENCRYPTION_KEYS=ENCRYPTION_KEYS,
+        save_tokens=save_tokens
+    )
 
     else:
         await err_unknown_request(proto=proto, ENCRYPTION_KEYS=ENCRYPTION_KEYS, client=websocket)
