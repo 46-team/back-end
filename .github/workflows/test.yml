@@ -1,0 +1,32 @@
+name: Test backend for errors
+
+on:
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout dev1 branch
+        uses: actions/checkout@v4
+        with:
+          ref: dev1
+
+      - name: Setup latest Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Run app (5s timeout)
+        run: |
+          timeout 5s python main.py || code=$?
+          
+          if [ "$code" -ne 0 ] && [ "$code" -ne 124 ]; then
+            exit $code
+          fi
