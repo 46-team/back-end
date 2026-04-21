@@ -1,10 +1,14 @@
 name: Test backend on errors
 
 on:
+  pull_request:
+    branches:
+      - dev1
+      - main
   workflow_dispatch:
     inputs:
       branch:
-        description: "Branch to test"
+        description: "Branch to test (manual run only)"
         required: true
         default: dev1
 
@@ -13,10 +17,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Determine branch
+        id: vars
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "branch=${{ github.head_ref }}" >> $GITHUB_OUTPUT
+          else
+            echo "branch=${{ github.event.inputs.branch }}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Checkout selected branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.branch }}
+          ref: ${{ steps.vars.outputs.branch }}
 
       - name: Setup latest Python
         uses: actions/setup-python@v5
