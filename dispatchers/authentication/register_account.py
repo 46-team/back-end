@@ -9,6 +9,7 @@ from dispatchers.utils.error_templates import (
     err_incompl_request,
     err_invalid_password
 )
+from dispatchers.utils.serializers import serialize_mongo_document
 
 
 async def server_register(
@@ -71,7 +72,7 @@ async def server_register_create_user(
     }
 
     result = await db['users'].insert_one(user_doc)
-    user_doc['_id'] = result['_id']
+    user_doc['_id'] = result.inserted_id
 
     token = hashlib.sha256(uuid.uuid4().hex.encode('utf-8')).hexdigest()
     USER_TOKENS[token] = [
@@ -89,7 +90,7 @@ async def server_register_create_user(
             "type":      "register_account",
             "token":     token,
             "auth_mode": "register",
-            "user":      user_doc
+            "user":      serialize_mongo_document(user_doc)
         },
         ENCRYPTION_KEYS[client]['key']
     )

@@ -1,4 +1,5 @@
 import time
+from dispatchers.utils.serializers import serialize_mongo_document
 
 
 class TournamentService:
@@ -25,7 +26,7 @@ class TournamentService:
         result = await db["tournaments"].insert_one(tournament)
 
         tournament["_id"] = str(result.inserted_id)
-        return tournament
+        return serialize_mongo_document(tournament)
     
     @staticmethod
     async def get_tournaments(db):
@@ -33,9 +34,6 @@ class TournamentService:
 
         tournaments = []
         async for tournament in tournaments_cursor:
-            if "_id" in tournament:
-                del tournament["_id"]
-
-            tournaments.append(tournament)
+            tournaments.append(serialize_mongo_document(tournament))
 
         return tournaments

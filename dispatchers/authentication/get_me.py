@@ -1,6 +1,7 @@
 from fastapi import WebSocket
 from dispatchers.utils.error_templates import err_invalid_token
 from dispatchers.utils.utils import find_token_by_websocket
+from dispatchers.utils.serializers import serialize_mongo_document
 
 
 async def get_me_handler(client: WebSocket, message: dict, USER_TOKENS: dict, proto, ENCRYPTION_KEYS):
@@ -20,10 +21,7 @@ async def get_me_handler(client: WebSocket, message: dict, USER_TOKENS: dict, pr
         await err_invalid_token(proto, ENCRYPTION_KEYS, client, type="get_me")
         return
 
-    user = session[1].copy()
-
-    if "_id" in user:
-        del user["_id"]
+    user = serialize_mongo_document(session[1])
 
     await proto.send_message(
         {
