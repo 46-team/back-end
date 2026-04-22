@@ -1,6 +1,8 @@
 fastapi
 aiofiles
-motor~=2.5.1
+cryptography
+motor~=3.7.1
+pycryptodome
 uvicorn
-pymongo~=3.12.3
+pymongo>=4.9,<5
 uvicorn[standard]

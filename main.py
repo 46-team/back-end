@@ -5,8 +5,18 @@ import motor.motor_asyncio
 import uvicorn
 from websocket import app
 
+db_username = env_data.get("SERVER_DB_USERNAME")
+db_password = env_data.get("SERVER_DB_PASSWORD")
+db_host = env_data["SERVER_DB_IP"]
+db_port = env_data["SERVER_DB_PORT"]
+
+if db_username and db_password:
+    mongo_uri = f"mongodb://{db_username}:{db_password}@{db_host}:{db_port}/"
+else:
+    mongo_uri = f"mongodb://{db_host}:{db_port}/"
+
 client = motor.motor_asyncio.AsyncIOMotorClient(
-    f"mongodb://{env_data['SERVER_DB_USERNAME']}:{env_data['SERVER_DB_PASSWORD']}@{env_data['SERVER_DB_IP']}:{env_data['SERVER_DB_PORT']}/"
+    mongo_uri
 )
 db = client[env_data["SERVER_DB_NAME"]]
 
