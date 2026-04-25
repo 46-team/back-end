@@ -12,6 +12,9 @@ from dispatchers.utils.error_templates import (
 from dispatchers.utils.serializers import serialize_mongo_document
 
 
+DEFAULT_REGISTERED_USER_ROLE = "Team"
+
+
 async def server_register(
     client: WebSocket,
     message: dict,
@@ -68,7 +71,7 @@ async def server_register_create_user(
         "email":      message.get('email', '').strip(),
         "full_name":   message.get('full_name', '').strip(),
         "password":   message['password'],
-        "role": message['role']         
+        "role": DEFAULT_REGISTERED_USER_ROLE
     }
 
     result = await db['users'].insert_one(user_doc)
