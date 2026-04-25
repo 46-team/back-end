@@ -62,6 +62,17 @@ async def message_handler(websocket: WebSocket, message: str):
             proto=proto,
             ENCRYPTION_KEYS=ENCRYPTION_KEYS
     )
+    elif message['type'] == "update_user_role":
+        from dispatchers.authentication.update_user_role import update_user_role_handler
+
+        await update_user_role_handler(
+            client=websocket,
+            message=message,
+            db=db,
+            USER_TOKENS=USER_TOKENS,
+            proto=proto,
+            ENCRYPTION_KEYS=ENCRYPTION_KEYS
+        )
     elif message['type'] == "register_account":
         from dispatchers.authentication.register_account import server_register
 
