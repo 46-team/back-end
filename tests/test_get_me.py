@@ -1,3 +1,5 @@
+import asyncio
+
 from bson import ObjectId
 
 from dispatchers.authentication.get_me import get_me_handler
@@ -37,6 +39,7 @@ async def test_get_me_rejects_invalid_token(client, encryption_keys, proto):
         ENCRYPTION_KEYS=encryption_keys,
     )
 
+    await asyncio.sleep(0)
     proto.send_message.assert_awaited_once()
     payload, _ = proto.send_message.await_args.args
     assert payload["is_ok"] is False

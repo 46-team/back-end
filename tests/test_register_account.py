@@ -1,3 +1,4 @@
+import asyncio
 from unittest.mock import AsyncMock
 
 from bson import ObjectId
@@ -23,6 +24,7 @@ async def test_register_rejects_short_password(client, encryption_keys, proto):
         save_tokens=AsyncMock(),
     )
 
+    await asyncio.sleep(0)
     payload, _ = proto.send_message.await_args.args
     assert payload["is_ok"] is False
     assert payload["error"] == "Password must contain at least 6 characters."
