@@ -1,8 +1,10 @@
 from bson import ObjectId
 from bson.errors import InvalidId
+from dispatchers.utils.serializers import serialize_public_user
 
 
 ALLOWED_ROLES = {"admin", "team", "jury", "organizer"}
+from dispatchers.authentication.roles import has_role, is_allowed_role, normalize_role, normalize_user_role
 MESSAGE_TYPE = "update_user_role"
 
 
@@ -15,19 +17,6 @@ async def send_update_role_error(client, proto, ENCRYPTION_KEYS, error):
         },
         ENCRYPTION_KEYS[client]['key']
     )
-
-
-def serialize_user(user):
-    user_data = user.copy()
-
-    if "_id" in user_data:
-        user_data["_id"] = str(user_data["_id"])
-
-    if "password" in user_data:
-        del user_data["password"]
-
-    return user_data
-
 
 async def sync_active_user_sessions(USER_TOKENS, user_id, role):
     for session in USER_TOKENS.values():
@@ -42,18 +31,16 @@ async def sync_active_user_sessions(USER_TOKENS, user_id, role):
 async def update_user_role_handler(client, message, db, USER_TOKENS, proto, ENCRYPTION_KEYS):
     token = message.get("device_token")
     target_user_id = message.get("target_user_id") or message.get("user_id")
-    requested_role = message.get("role")
-
-    if isinstance(requested_role, str):
-        requested_role = requested_role.strip().lower()
+    requested_role = normalize_role(message.get("role"))
 
     if not token or token not in USER_TOKENS:
         await send_update_role_error(client, proto, ENCRYPTION_KEYS, "Authentication required")
         return
 
     requester = USER_TOKENS[token][1]
+    normalize_user_role(requester)
 
-    if requester.get("role") != "admin":
+    if not has_role(requester, "admin"):
         await send_update_role_error(client, proto, ENCRYPTION_KEYS, "Access denied")
         return
 
@@ -61,7 +48,7 @@ async def update_user_role_handler(client, message, db, USER_TOKENS, proto, ENCR
         await send_update_role_error(client, proto, ENCRYPTION_KEYS, "Required data is missing")
         return
 
-    if requested_role not in ALLOWED_ROLES:
+    if not is_allowed_role(requested_role):
         await send_update_role_error(client, proto, ENCRYPTION_KEYS, "Invalid role")
         return
 
@@ -87,13 +74,14 @@ async def update_user_role_handler(client, message, db, USER_TOKENS, proto, ENCR
     )
 
     target_user["role"] = requested_role
+    normalize_user_role(target_user)
     await sync_active_user_sessions(USER_TOKENS, target_object_id, requested_role)
 
     await proto.send_message(
         {
             "is_ok": True,
             "type": MESSAGE_TYPE,
-            "user": serialize_user(target_user)
+            "user": serialize_public_user(target_user)
         },
         ENCRYPTION_KEYS[client]['key']
     )

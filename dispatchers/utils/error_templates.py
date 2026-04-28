@@ -148,3 +148,4 @@ async def err_invalid_password(proto: FGProto, ENCRYPTION_KEYS: dict, client: We
         ENCRYPTION_KEYS[client]['key'],
         "INVALID_PASSWORD"
     )
+

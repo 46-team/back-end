@@ -1,4 +1,5 @@
 import time
+from dispatchers.authentication.roles import has_role
 from dispatchers.utils.serializers import serialize_mongo_document
 
 
@@ -7,7 +8,7 @@ class TournamentService:
     @staticmethod
     async def create_tournament(db, data, user):
 
-        if user.get("role") != "admin":
+        if not has_role(user, "admin"):
             raise Exception("Access denied")
 
         if "title" not in data:
