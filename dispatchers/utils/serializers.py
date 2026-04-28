@@ -1,5 +1,7 @@
 from bson import ObjectId
 
+PUBLIC_USER_FIELDS = {"_id", "email", "full_name", "login", "role"}
+
 
 def serialize_mongo_value(value):
     if isinstance(value, ObjectId):
@@ -16,3 +18,13 @@ def serialize_mongo_value(value):
 
 def serialize_mongo_document(document):
     return serialize_mongo_value(dict(document))
+
+
+def serialize_public_user(document):
+    raw_document = dict(document)
+    public_user = {
+        key: raw_document[key]
+        for key in PUBLIC_USER_FIELDS
+        if key in raw_document
+    }
+    return serialize_mongo_value(public_user)
