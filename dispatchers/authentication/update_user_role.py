@@ -1,5 +1,9 @@
 from bson import ObjectId
 from bson.errors import InvalidId
+from dispatchers.utils.serializers import serialize_public_user
+
+
+ALLOWED_ROLES = {"admin", "team", "jury", "organizer"}
 from dispatchers.authentication.roles import has_role, is_allowed_role, normalize_role, normalize_user_role
 MESSAGE_TYPE = "update_user_role"
 
@@ -13,19 +17,6 @@ async def send_update_role_error(client, proto, ENCRYPTION_KEYS, error):
         },
         ENCRYPTION_KEYS[client]['key']
     )
-
-
-def serialize_user(user):
-    user_data = user.copy()
-
-    if "_id" in user_data:
-        user_data["_id"] = str(user_data["_id"])
-
-    if "password" in user_data:
-        del user_data["password"]
-
-    return user_data
-
 
 async def sync_active_user_sessions(USER_TOKENS, user_id, role):
     for session in USER_TOKENS.values():
@@ -90,7 +81,7 @@ async def update_user_role_handler(client, message, db, USER_TOKENS, proto, ENCR
         {
             "is_ok": True,
             "type": MESSAGE_TYPE,
-            "user": serialize_user(target_user)
+            "user": serialize_public_user(target_user)
         },
         ENCRYPTION_KEYS[client]['key']
     )

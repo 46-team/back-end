@@ -7,7 +7,7 @@ from dispatchers.utils.error_templates import (
     err_incompl_request,
     err_invalid_password
 )
-from dispatchers.utils.serializers import serialize_mongo_document
+from dispatchers.utils.serializers import serialize_public_user
 from dispatchers.authentication.roles import DEFAULT_ROLE, normalize_user_role
 
 
@@ -102,7 +102,7 @@ async def server_register_create_user(
             "type":      "register_account",
             "token":     token,
             "auth_mode": "register",
-            "user":      serialize_mongo_document(user_doc)
+            "user":      serialize_public_user(user_doc)
         },
         ENCRYPTION_KEYS[client]['key']
     )
