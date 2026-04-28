@@ -2,17 +2,16 @@ import hashlib
 import uuid
 from fastapi import WebSocket
 import dispatchers.utils.FGProto as FGProto
-from websocket import save_tokens
 from dispatchers.utils.error_templates import (
-    err_unknown_mode,
     err_user_already_exists,
     err_incompl_request,
     err_invalid_password
 )
 from dispatchers.utils.serializers import serialize_mongo_document
+from dispatchers.authentication.roles import DEFAULT_ROLE, normalize_user_role
 
 
-DEFAULT_REGISTERED_USER_ROLE = "Team"
+DEFAULT_REGISTERED_USER_ROLE = DEFAULT_ROLE
 
 
 async def server_register(
@@ -85,6 +84,7 @@ async def server_register_create_user(
 
     result = await db['users'].insert_one(user_doc)
     user_doc['_id'] = result.inserted_id
+    normalize_user_role(user_doc)
 
     token = hashlib.sha256(uuid.uuid4().hex.encode('utf-8')).hexdigest()
     USER_TOKENS[token] = [
