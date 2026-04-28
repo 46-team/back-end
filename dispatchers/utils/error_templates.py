@@ -125,3 +125,12 @@ async def err_incorrect_login(proto: FGProto, ENCRYPTION_KEYS: dict, client: Web
         ENCRYPTION_KEYS[client]['key'],
         "INCORRECT_LOGIN"
     )
+
+
+async def err_user_already_exists(proto: FGProto, ENCRYPTION_KEYS: dict, client: WebSocket) -> None:
+    proto.Error(
+        proto,
+        "A user with this login or email already exists.",
+        ENCRYPTION_KEYS[client]['key'],
+        "USER_ALREADY_EXISTS"
+    )

@@ -24,15 +24,15 @@ async def server_register(
     ENCRYPTION_KEYS: dict,
     save_tokens: any
 ) -> None:
-    
     if not message.get('login') or not message.get('password') or not message.get('full_name'):
         await err_incompl_request(proto=proto, ENCRYPTION_KEYS=ENCRYPTION_KEYS, client=client)
         return
 
-    message['login'] = message['login'].strip()
+    login = message['login'].strip()
+    email = message.get('email', '').strip()
+    full_name = message.get('full_name', '').strip()
 
-    
-    if len(message['login']) < 3:
+    if len(login) < 3:
         await err_incompl_request(proto=proto, ENCRYPTION_KEYS=ENCRYPTION_KEYS, client=client)
         return
 
@@ -40,11 +40,19 @@ async def server_register(
         await err_invalid_password(proto=proto, ENCRYPTION_KEYS=ENCRYPTION_KEYS, client=client)
         return
 
-    
-    existing_user = await db['users'].find_one({"login": message['login'], "email": message['email']})
+    existing_user = await db['users'].find_one({
+        "$or": [
+            {"login": login},
+            {"email": email},
+        ]
+    })
     if existing_user:
         await err_user_already_exists(proto=proto, ENCRYPTION_KEYS=ENCRYPTION_KEYS, client=client)
         return
+
+    message['login'] = login
+    message['email'] = email
+    message['full_name'] = full_name
 
     await server_register_create_user(
         client=client,
@@ -68,10 +76,11 @@ async def server_register_create_user(
 ) -> None:
   
     user_doc = {
-        "email":      message.get('email', '').strip(),
-        "full_name":   message.get('full_name', '').strip(),
-        "password":   message['password'],
-        "role": DEFAULT_REGISTERED_USER_ROLE
+        "login": message['login'],
+        "email": message['email'],
+        "full_name": message['full_name'],
+        "password": message['password'],
+        "role": DEFAULT_REGISTERED_USER_ROLE,
     }
 
     result = await db['users'].insert_one(user_doc)
