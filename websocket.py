@@ -10,6 +10,7 @@ from dispatchers.authentication import auth
 from dispatchers.utils.error_templates import err_unknown_request
 from dispatchers.utils.utils import find_token_by_websocket
 from dispatchers.utils import FGProto as fgproto
+from dispatchers.authentication.roles import normalize_user_role
 from dispatchers.authentication.get_me import get_me_handler
 from dispatchers.tournaments.create import create_tournament_handler
 app = FastAPI()
@@ -173,6 +174,7 @@ async def load_tokens():
                 USER_TOKENS = {}
         for i in USER_TOKENS.keys():
             USER_TOKENS[i][1]['_id'] = ObjectId(USER_TOKENS[i][1]['_id'])
+            normalize_user_role(USER_TOKENS[i][1])
         return USER_TOKENS
     return {}
 
