@@ -1,6 +1,11 @@
-import dispatchers.utils.FGProto as FGProto
+from typing import TYPE_CHECKING, Any
 from fastapi import WebSocket
 from dispatchers.utils.dotenv_dispatcher import env_data
+
+if TYPE_CHECKING:
+    import dispatchers.utils.FGProto as FGProto
+else:
+    FGProto = Any
 
 
 async def err_unknown_mode(proto: FGProto, ENCRYPTION_KEYS: dict, client: WebSocket, type="null") -> None:
@@ -124,4 +129,22 @@ async def err_incorrect_login(proto: FGProto, ENCRYPTION_KEYS: dict, client: Web
         "Invalid login credentials. Please try again.",
         ENCRYPTION_KEYS[client]['key'],
         "INCORRECT_LOGIN"
+    )
+
+
+async def err_user_already_exists(proto: FGProto, ENCRYPTION_KEYS: dict, client: WebSocket) -> None:
+    proto.Error(
+        proto,
+        "User with this login or email already exists.",
+        ENCRYPTION_KEYS[client]['key'],
+        "USER_ALREADY_EXISTS"
+    )
+
+
+async def err_invalid_password(proto: FGProto, ENCRYPTION_KEYS: dict, client: WebSocket) -> None:
+    proto.Error(
+        proto,
+        "Password must contain at least 6 characters.",
+        ENCRYPTION_KEYS[client]['key'],
+        "INVALID_PASSWORD"
     )

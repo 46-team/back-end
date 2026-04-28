@@ -1,8 +1,7 @@
 import hashlib
 import uuid
+from typing import TYPE_CHECKING, Any
 from fastapi import WebSocket
-import dispatchers.utils.FGProto as FGProto
-from websocket import save_tokens
 from dispatchers.utils.error_templates import (
     err_unknown_mode,
     err_user_already_exists,
@@ -10,6 +9,11 @@ from dispatchers.utils.error_templates import (
     err_invalid_password
 )
 from dispatchers.utils.serializers import serialize_mongo_document
+
+if TYPE_CHECKING:
+    import dispatchers.utils.FGProto as FGProto
+else:
+    FGProto = Any
 
 
 DEFAULT_REGISTERED_USER_ROLE = "Team"
@@ -40,7 +44,6 @@ async def server_register(
         await err_invalid_password(proto=proto, ENCRYPTION_KEYS=ENCRYPTION_KEYS, client=client)
         return
 
-    
     existing_user = await db['users'].find_one({"login": message['login'], "email": message['email']})
     if existing_user:
         await err_user_already_exists(proto=proto, ENCRYPTION_KEYS=ENCRYPTION_KEYS, client=client)
