@@ -13,6 +13,7 @@ from dispatchers.utils import FGProto as fgproto
 from dispatchers.authentication.roles import normalize_user_role
 from dispatchers.authentication.get_me import get_me_handler
 from dispatchers.tournaments.create import create_tournament_handler
+from dispatchers.tournaments.tournament_get import get_tournaments, get_tournament
 app = FastAPI()
 active_connections = set()
 ENCRYPTION_KEYS = {}
@@ -85,6 +86,23 @@ async def message_handler(websocket: WebSocket, message: str):
         proto=proto,
         ENCRYPTION_KEYS=ENCRYPTION_KEYS,
         save_tokens=save_tokens
+    )
+    elif message['type'] == 'get_tournaments':
+        await get_tournaments(
+        client=websocket, 
+        message=message, 
+        db=db,
+        proto=proto, 
+        ENCRYPTION_KEYS=ENCRYPTION_KEYS,
+    )
+
+    elif message['type'] == 'get_tournament':
+        await get_tournament(
+        client=websocket, 
+        message=message, 
+        db=db,
+        proto=proto, 
+        ENCRYPTION_KEYS=ENCRYPTION_KEYS,
     )
 
     else:

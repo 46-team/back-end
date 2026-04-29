@@ -134,3 +134,14 @@ async def err_user_already_exists(proto: FGProto, ENCRYPTION_KEYS: dict, client:
         ENCRYPTION_KEYS[client]['key'],
         "USER_ALREADY_EXISTS"
     )
+async def err_invalid_id(proto, ENCRYPTION_KEYS, client):
+    await proto.send_message(
+        {"is_ok": False, "error": "invalid_id", "message": "Невалідний ID турніру"},
+        ENCRYPTION_KEYS[client]['key']
+    )
+
+async def err_not_found(proto, ENCRYPTION_KEYS, client, entity: str = "object"):
+    await proto.send_message(
+        {"is_ok": False, "error": "not_found", "message": f"{entity} не знайдено"},
+        ENCRYPTION_KEYS[client]['key']
+    )
