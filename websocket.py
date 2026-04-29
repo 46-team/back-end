@@ -87,15 +87,6 @@ async def message_handler(websocket: WebSocket, message: str):
         ENCRYPTION_KEYS=ENCRYPTION_KEYS,
         save_tokens=save_tokens
     )
-    elif message['type'] == 'get_tournaments':
-        await get_tournaments(
-        client=websocket, 
-        message=message, 
-        db=db,
-        proto=proto, 
-        ENCRYPTION_KEYS=ENCRYPTION_KEYS,
-    )
-
     elif message['type'] == 'get_tournament':
         await get_tournament(
         client=websocket, 
