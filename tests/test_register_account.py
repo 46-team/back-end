@@ -55,7 +55,7 @@ async def test_register_creates_user_with_default_role(client, encryption_keys, 
 
     users_collection.insert_one.assert_awaited_once()
     inserted_user = users_collection.insert_one.await_args.args[0]
-    assert inserted_user["role"] == "Team"
+    assert inserted_user["role"] == "team"
     save_tokens.assert_awaited_once()
     payload, _ = proto.send_message.await_args.args
     assert payload["is_ok"] is True
