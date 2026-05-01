@@ -92,6 +92,7 @@ async def message_handler(websocket: WebSocket, message: str):
         client=websocket, 
         message=message, 
         db=db,
+        USER_TOKENS=USER_TOKENS, 
         proto=proto, 
         ENCRYPTION_KEYS=ENCRYPTION_KEYS,
     )
