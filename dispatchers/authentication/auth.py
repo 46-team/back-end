@@ -2,8 +2,9 @@ import hashlib
 import uuid
 from typing import TYPE_CHECKING, Any
 from fastapi import WebSocket
+from dispatchers.authentication.roles import normalize_user_role
 from dispatchers.utils.error_templates import err_incorrect_login, err_unknown_mode
-from dispatchers.utils.serializers import serialize_mongo_document
+from dispatchers.utils.serializers import serialize_mongo_document, serialize_public_user
 
 if TYPE_CHECKING:
     import dispatchers.utils.FGProto as FGProto
