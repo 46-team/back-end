@@ -76,10 +76,10 @@
     {
       "title": "AuthRequest",
       "type": "object",
-      "required": ["type", "login", "password"],
+      "required": ["type", "email", "password"],
       "properties": {
         "type": { "const": "auth" },
-        "login": { "type": "string" },
+        "email": { "type": "string" },
         "password": { "type": "string" }
       },
       "additionalProperties": true
