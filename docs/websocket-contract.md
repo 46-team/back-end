@@ -101,6 +101,7 @@ Tournament objects currently use this shape:
   "created_by": "string",
   "start_date": "string | null",
   "end_date": "string | null",
+  "participant_ids": ["string"],
   "status": "Draft",
   "created_at": 1710000000
 }
@@ -242,7 +243,7 @@ Known errors:
 
 ### create_tournament
 
-Creates a tournament. The authenticated user must have the `admin` role.
+Creates a tournament. The authenticated user must have the `organizer` role.
 
 Request:
 
@@ -281,6 +282,7 @@ Successful response:
     "created_by": "user-id",
     "start_date": "2026-05-01",
     "end_date": "2026-05-03",
+    "participant_ids": [],
     "status": "Draft",
     "created_at": 1710000000
   }
@@ -335,6 +337,7 @@ Successful response:
       "created_by": "user-id",
       "start_date": "2026-05-01",
       "end_date": "2026-05-03",
+      "participant_ids": ["participant-user-id"],
       "status": "Draft",
       "created_at": 1710000000
     }
@@ -351,6 +354,69 @@ Current inline errors:
   "error": "Invalid token"
 }
 ```
+
+### assign_tournament_participants
+
+Replaces the participant list for a tournament. The authenticated user must have
+the `organizer` role.
+
+Request:
+
+```json
+{
+  "type": "assign_tournament_participants",
+  "device_token": "device-token",
+  "tournament_id": "tournament-id",
+  "participant_ids": ["participant-user-id"]
+}
+```
+
+Required fields:
+
+- `device_token`
+- `tournament_id`
+- `participant_ids`
+
+Successful response:
+
+```json
+{
+  "is_ok": true,
+  "type": "assign_tournament_participants",
+  "tournament": {
+    "_id": "tournament-id",
+    "title": "Spring Cup",
+    "description": "Test event",
+    "created_by": "user-id",
+    "start_date": "2026-05-01",
+    "end_date": "2026-05-03",
+    "participant_ids": ["participant-user-id"],
+    "status": "Draft",
+    "created_at": 1710000000
+  }
+}
+```
+
+Current inline errors:
+
+```json
+{
+  "is_ok": false,
+  "type": "assign_tournament_participants",
+  "error": "Access denied"
+}
+```
+
+Possible error messages include:
+
+- `Authentication required`
+- `Access denied`
+- `Required data is missing`
+- `Invalid tournament_id`
+- `Tournament not found`
+- `Invalid participant_ids`
+- `Invalid user_id`
+- `User not found`
 
 ### update_user_role
 

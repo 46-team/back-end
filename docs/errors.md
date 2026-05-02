@@ -68,6 +68,27 @@ Known messages:
 }
 ```
 
+### assign_tournament_participants
+
+```json
+{
+  "is_ok": false,
+  "type": "assign_tournament_participants",
+  "error": "Access denied"
+}
+```
+
+Known messages:
+
+- `Authentication required`
+- `Access denied`
+- `Required data is missing`
+- `Invalid tournament_id`
+- `Tournament not found`
+- `Invalid participant_ids`
+- `Invalid user_id`
+- `User not found`
+
 ### update_user_role
 
 ```json
