@@ -112,14 +112,14 @@ Tournament objects currently use this shape:
 
 ### auth
 
-Authenticates an existing user by login and password.
+Authenticates an existing user by email and password.
 
 Request:
 
 ```json
 {
   "type": "auth",
-  "login": "alice",
+  "email": "alice@example.com",
   "password": "secret123"
 }
 ```
