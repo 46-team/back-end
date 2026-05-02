@@ -39,25 +39,13 @@ async def get_tournament(
     try:
         oid = ObjectId(message["tournament_id"])
     except (InvalidId, TypeError):
-        await proto.Error(
-            type="get_tournament",
-            error="invalid_id",
-            err_code=400,
-            client=client,
-            ENCRYPTION_KEYS=ENCRYPTION_KEYS
-        )
+        await err_invalid_id(proto=proto, ENCRYPTION_KEYS=ENCRYPTION_KEYS, client=client, type="get_tournament")  
         return
 
     tournament = await tournament_service_get(db, oid)
 
     if not tournament:
-        await proto.Error(
-            type="get_tournament",
-            error="not_found",
-            err_code=404,
-            client=client,
-            ENCRYPTION_KEYS=ENCRYPTION_KEYS
-        )
+        await err_not_found(proto=proto, ENCRYPTION_KEYS=ENCRYPTION_KEYS, client=client, type="get_tournament")  
         return
 
     await proto.send_message(
