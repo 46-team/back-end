@@ -1,7 +1,7 @@
 import hashlib
 import uuid
+from typing import TYPE_CHECKING, Any
 from fastapi import WebSocket
-import dispatchers.utils.FGProto as FGProto
 from dispatchers.utils.error_templates import (
     err_user_already_exists,
     err_incompl_request,
@@ -9,6 +9,11 @@ from dispatchers.utils.error_templates import (
 )
 from dispatchers.utils.serializers import serialize_public_user
 from dispatchers.authentication.roles import DEFAULT_ROLE, normalize_user_role
+
+if TYPE_CHECKING:
+    import dispatchers.utils.FGProto as FGProto
+else:
+    FGProto = Any
 
 
 DEFAULT_REGISTERED_USER_ROLE = DEFAULT_ROLE
