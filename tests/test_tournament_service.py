@@ -95,6 +95,7 @@ async def test_create_tournament_requires_title():
 @pytest.mark.asyncio
 async def test_assign_participants_for_organizer_updates_tournament():
     tournament_id = ObjectId()
+    organizer_id = ObjectId()
     first_user_id = ObjectId()
     second_user_id = ObjectId()
     tournaments = FakeTournamentCollection(
@@ -102,7 +103,7 @@ async def test_assign_participants_for_organizer_updates_tournament():
             tournament_id: {
                 "_id": tournament_id,
                 "title": "Spring Cup",
-                "created_by": ObjectId(),
+                "created_by": organizer_id,
                 "status": "Draft",
                 "created_at": 1710000000,
                 "participant_ids": [],
@@ -121,7 +122,7 @@ async def test_assign_participants_for_organizer_updates_tournament():
         db=db,
         tournament_id=str(tournament_id),
         participant_ids=[str(first_user_id), str(second_user_id)],
-        user={"_id": ObjectId(), "role": "organizer"},
+        user={"_id": organizer_id, "role": "organizer"},
     )
 
     assert result["_id"] == str(tournament_id)
@@ -132,6 +133,36 @@ async def test_assign_participants_for_organizer_updates_tournament():
             {"$set": {"participant_ids": [first_user_id, second_user_id]}},
         )
     ]
+
+
+@pytest.mark.asyncio
+async def test_assign_participants_rejects_different_organizer():
+    tournament_id = ObjectId()
+    tournament_owner_id = ObjectId()
+    other_organizer_id = ObjectId()
+    tournaments = FakeTournamentCollection(
+        {
+            tournament_id: {
+                "_id": tournament_id,
+                "title": "Spring Cup",
+                "created_by": tournament_owner_id,
+                "status": "Draft",
+                "created_at": 1710000000,
+                "participant_ids": [],
+            }
+        }
+    )
+    db = FakeDb(tournaments=tournaments)
+
+    with pytest.raises(Exception, match="Access denied"):
+        await TournamentService.assign_participants(
+            db=db,
+            tournament_id=str(tournament_id),
+            participant_ids=[],
+            user={"_id": other_organizer_id, "role": "organizer"},
+        )
+
+    assert tournaments.update_one_calls == []
 
 
 @pytest.mark.asyncio
@@ -203,13 +234,14 @@ async def test_assign_participants_rejects_non_list_participant_ids():
 @pytest.mark.asyncio
 async def test_assign_participants_rejects_invalid_user_id():
     tournament_id = ObjectId()
+    organizer_id = ObjectId()
     db = FakeDb(
         tournaments=FakeTournamentCollection(
             {
                 tournament_id: {
                     "_id": tournament_id,
                     "title": "Spring Cup",
-                    "created_by": ObjectId(),
+                    "created_by": organizer_id,
                     "status": "Draft",
                     "created_at": 1710000000,
                     "participant_ids": [],
@@ -223,20 +255,21 @@ async def test_assign_participants_rejects_invalid_user_id():
             db=db,
             tournament_id=str(tournament_id),
             participant_ids=["not-an-object-id"],
-            user={"_id": ObjectId(), "role": "organizer"},
+            user={"_id": organizer_id, "role": "organizer"},
         )
 
 
 @pytest.mark.asyncio
 async def test_assign_participants_rejects_missing_user():
     tournament_id = ObjectId()
+    organizer_id = ObjectId()
     db = FakeDb(
         tournaments=FakeTournamentCollection(
             {
                 tournament_id: {
                     "_id": tournament_id,
                     "title": "Spring Cup",
-                    "created_by": ObjectId(),
+                    "created_by": organizer_id,
                     "status": "Draft",
                     "created_at": 1710000000,
                     "participant_ids": [],
@@ -250,5 +283,5 @@ async def test_assign_participants_rejects_missing_user():
             db=db,
             tournament_id=str(tournament_id),
             participant_ids=[str(ObjectId())],
-            user={"_id": ObjectId(), "role": "organizer"},
+            user={"_id": organizer_id, "role": "organizer"},
         )

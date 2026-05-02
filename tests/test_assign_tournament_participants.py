@@ -23,6 +23,7 @@ async def test_assign_tournament_participants_handler_requires_authentication(cl
 async def test_assign_tournament_participants_handler_returns_updated_tournament(client, encryption_keys, proto):
     token = "organizer-token"
     tournament_id = ObjectId()
+    organizer_id = ObjectId()
     participant_id = ObjectId()
     db = FakeDb(
         tournaments=FakeTournamentCollection(
@@ -30,7 +31,7 @@ async def test_assign_tournament_participants_handler_returns_updated_tournament
                 tournament_id: {
                     "_id": tournament_id,
                     "title": "Spring Cup",
-                    "created_by": ObjectId(),
+                    "created_by": organizer_id,
                     "status": "Draft",
                     "created_at": 1710000000,
                     "participant_ids": [],
@@ -53,7 +54,7 @@ async def test_assign_tournament_participants_handler_returns_updated_tournament
         },
         db=db,
         USER_TOKENS={
-            token: [client, {"_id": ObjectId(), "role": "organizer"}, False, "login", {}]
+            token: [client, {"_id": organizer_id, "role": "organizer"}, False, "login", {}]
         },
         proto=proto,
         ENCRYPTION_KEYS=encryption_keys,

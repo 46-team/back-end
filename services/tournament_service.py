@@ -62,6 +62,9 @@ class TournamentService:
         if not tournament:
             raise Exception("Tournament not found")
 
+        if tournament.get("created_by") != user["_id"]:
+            raise Exception("Access denied")
+
         participant_object_ids = []
         for user_id in participant_ids:
             try:
