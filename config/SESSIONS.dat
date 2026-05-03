@@ -1,1 +1,0 @@
-{'56a5f215eb028fced6378122bcdf539cf1039fdb542eb88772cc8dd74431fb1d': [None, {'_id': '69e0e9b480f0b80d9ba79ff8', 'email': 'example@example.org', 'full_name': 'Test User', 'password': '123', 'role': 0}, False, 'login', {'is_frozen': False, 'is_online': True, 'last_seen': None, 'login_at': None}]}
