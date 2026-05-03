@@ -3,7 +3,6 @@ from bson import ObjectId
 from bson.errors import InvalidId
 from dispatchers.authentication.roles import has_role
 from dispatchers.utils.serializers import serialize_mongo_document
-from bson import ObjectId
 
 TOURNAMENT_PUBLIC_FIELDS = {
     "_id": 1,

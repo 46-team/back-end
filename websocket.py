@@ -75,12 +75,6 @@ async def message_handler(websocket: WebSocket, message: str):
             proto=proto,
             ENCRYPTION_KEYS=ENCRYPTION_KEYS
         )
-    elif message['type'] == "register_account":
-        from dispatchers.authentication.register_account import server_register
-
-        await server_register(
-            ENCRYPTION_KEYS=ENCRYPTION_KEYS
-    )
     elif message['type'] == "assign_tournament_participants":
         from dispatchers.tournaments.assign_participants import assign_tournament_participants_handler
 
@@ -96,23 +90,23 @@ async def message_handler(websocket: WebSocket, message: str):
         from dispatchers.authentication.register_account import server_register
 
         await server_register(
-        client=websocket,
-        message=message,
-        db=db,
-        USER_TOKENS=USER_TOKENS,
-        proto=proto,
-        ENCRYPTION_KEYS=ENCRYPTION_KEYS,
-        save_tokens=save_tokens
-    )
+            client=websocket,
+            message=message,
+            db=db,
+            USER_TOKENS=USER_TOKENS,
+            proto=proto,
+            ENCRYPTION_KEYS=ENCRYPTION_KEYS,
+            save_tokens=save_tokens
+        )
     elif message['type'] == 'get_tournament':
         await get_tournament(
-        client=websocket, 
-        message=message, 
-        db=db,
-        USER_TOKENS=USER_TOKENS, 
-        proto=proto, 
-        ENCRYPTION_KEYS=ENCRYPTION_KEYS,
-    )
+            client=websocket,
+            message=message,
+            db=db,
+            USER_TOKENS=USER_TOKENS,
+            proto=proto,
+            ENCRYPTION_KEYS=ENCRYPTION_KEYS,
+        )
 
     else:
         await err_unknown_request(proto=proto, ENCRYPTION_KEYS=ENCRYPTION_KEYS, client=websocket)
