@@ -53,6 +53,18 @@ async def message_handler(websocket: WebSocket, message: str):
             ENCRYPTION_KEYS=ENCRYPTION_KEYS
         )
 
+    elif message['type'] == "update_tournament":
+        from dispatchers.tournaments.update import update_tournament_handler
+
+        await update_tournament_handler(
+            client=websocket,
+            message=message,
+            db=db,
+            USER_TOKENS=USER_TOKENS,
+            proto=proto,
+            ENCRYPTION_KEYS=ENCRYPTION_KEYS
+        )
+
     elif message['type'] == "get_tournaments":
         from dispatchers.tournaments.get_all import get_tournaments_handler
 

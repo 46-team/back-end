@@ -103,11 +103,13 @@ Tournament objects currently use this shape:
   "end_date": "string | null",
   "participant_ids": ["string"],
   "status": "Draft",
-  "created_at": 1710000000
+  "created_at": 1710000000,
+  "updated_at": 1710000100
 }
 ```
 
-`created_at` is a Unix timestamp in seconds.
+`created_at` and `updated_at` are Unix timestamps in seconds. `updated_at`
+is present after a tournament has been updated.
 
 ## Supported Messages
 
@@ -305,6 +307,79 @@ Possible error messages include:
 - `Invalid tournament data: 'title' is required`
 
 If `device_token` is invalid, the current handler returns no response.
+
+### update_tournament
+
+Updates editable tournament information. The authenticated user must have the
+`organizer` role and must be the tournament creator.
+
+Request:
+
+```json
+{
+  "type": "update_tournament",
+  "device_token": "device-token",
+  "tournament_id": "tournament-id",
+  "title": "Summer Cup",
+  "description": "Updated event",
+  "start_date": "2026-05-10",
+  "end_date": "2026-05-12"
+}
+```
+
+Required fields:
+
+- `device_token`
+- `tournament_id`
+
+Editable fields:
+
+- `title`
+- `description`
+- `start_date`
+- `end_date`
+
+Successful response:
+
+```json
+{
+  "is_ok": true,
+  "type": "update_tournament",
+  "tournament": {
+    "_id": "tournament-id",
+    "title": "Summer Cup",
+    "description": "Updated event",
+    "created_by": "user-id",
+    "start_date": "2026-05-10",
+    "end_date": "2026-05-12",
+    "participant_ids": [],
+    "status": "Draft",
+    "created_at": 1710000000,
+    "updated_at": 1710000100
+  }
+}
+```
+
+Current inline errors:
+
+```json
+{
+  "is_ok": false,
+  "type": "update_tournament",
+  "error": "Tournament not found"
+}
+```
+
+Possible error messages include:
+
+- `Authentication required`
+- `Access denied`
+- `Required data is missing`
+- `Invalid tournament_id`
+- `Tournament not found`
+- `Invalid tournament data: 'title' cannot be empty`
+- `Invalid tournament dates`
+- `Invalid tournament dates: 'start_date' must be earlier than 'end_date'`
 
 ### get_tournaments
 
