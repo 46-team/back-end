@@ -1,4 +1,6 @@
 import time
+from bson import ObjectId
+from bson.errors import InvalidId
 from dispatchers.authentication.roles import has_role
 from dispatchers.utils.serializers import serialize_mongo_document
 from bson import ObjectId
@@ -25,7 +27,7 @@ class TournamentService:
     @staticmethod
     async def create_tournament(db, data, user):
 
-        if not has_role(user, "admin"):
+        if not has_role(user, "organizer"):
             raise Exception("Access denied")
 
         if "title" not in data:
@@ -37,6 +39,7 @@ class TournamentService:
             "created_by": user["_id"],
             "start_date": data.get("start_date"),
             "end_date": data.get("end_date"),
+            "participant_ids": [],
             "status": "Draft",
             "created_at": int(time.time())
         }
@@ -55,3 +58,46 @@ class TournamentService:
             tournaments.append(serialize_mongo_document(tournament))
 
         return tournaments
+
+    @staticmethod
+    async def assign_participants(db, tournament_id, participant_ids, user):
+        if not has_role(user, "organizer"):
+            raise Exception("Access denied")
+
+        if not tournament_id or participant_ids is None:
+            raise Exception("Required data is missing")
+
+        try:
+            tournament_object_id = ObjectId(tournament_id)
+        except (InvalidId, TypeError):
+            raise Exception("Invalid tournament_id")
+
+        if not isinstance(participant_ids, list):
+            raise Exception("Invalid participant_ids")
+
+        tournament = await db["tournaments"].find_one({"_id": tournament_object_id})
+        if not tournament:
+            raise Exception("Tournament not found")
+
+        if tournament.get("created_by") != user["_id"]:
+            raise Exception("Access denied")
+
+        participant_object_ids = []
+        for user_id in participant_ids:
+            try:
+                participant_object_ids.append(ObjectId(user_id))
+            except (InvalidId, TypeError):
+                raise Exception("Invalid user_id")
+
+        for participant_object_id in participant_object_ids:
+            participant = await db["users"].find_one({"_id": participant_object_id})
+            if not participant:
+                raise Exception("User not found")
+
+        await db["tournaments"].update_one(
+            {"_id": tournament_object_id},
+            {"$set": {"participant_ids": participant_object_ids}}
+        )
+
+        tournament["participant_ids"] = participant_object_ids
+        return serialize_mongo_document(tournament)

@@ -79,6 +79,23 @@ async def message_handler(websocket: WebSocket, message: str):
         from dispatchers.authentication.register_account import server_register
 
         await server_register(
+            ENCRYPTION_KEYS=ENCRYPTION_KEYS
+    )
+    elif message['type'] == "assign_tournament_participants":
+        from dispatchers.tournaments.assign_participants import assign_tournament_participants_handler
+
+        await assign_tournament_participants_handler(
+            client=websocket,
+            message=message,
+            db=db,
+            USER_TOKENS=USER_TOKENS,
+            proto=proto,
+            ENCRYPTION_KEYS=ENCRYPTION_KEYS
+        )
+    elif message['type'] == "register_account":
+        from dispatchers.authentication.register_account import server_register
+
+        await server_register(
         client=websocket,
         message=message,
         db=db,

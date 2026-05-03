@@ -29,6 +29,10 @@
         "created_by": { "type": "string" },
         "start_date": { "type": ["string", "null"] },
         "end_date": { "type": ["string", "null"] },
+        "participant_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
         "status": { "type": "string", "const": "Draft" },
         "created_at": { "type": "integer" }
       },
@@ -76,10 +80,10 @@
     {
       "title": "AuthRequest",
       "type": "object",
-      "required": ["type", "login", "password"],
+      "required": ["type", "email", "password"],
       "properties": {
         "type": { "const": "auth" },
-        "login": { "type": "string" },
+        "email": { "type": "string" },
         "password": { "type": "string" }
       },
       "additionalProperties": true
@@ -190,6 +194,32 @@
           "type": "array",
           "items": { "$ref": "#/$defs/tournament" }
         }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "AssignTournamentParticipantsRequest",
+      "type": "object",
+      "required": ["type", "device_token", "tournament_id", "participant_ids"],
+      "properties": {
+        "type": { "const": "assign_tournament_participants" },
+        "device_token": { "type": "string" },
+        "tournament_id": { "type": "string" },
+        "participant_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "AssignTournamentParticipantsSuccessResponse",
+      "type": "object",
+      "required": ["is_ok", "type", "tournament"],
+      "properties": {
+        "is_ok": { "type": "boolean", "const": true },
+        "type": { "const": "assign_tournament_participants" },
+        "tournament": { "$ref": "#/$defs/tournament" }
       },
       "additionalProperties": true
     },
