@@ -1,7 +1,7 @@
 import pytest
 from bson import ObjectId
 
-from services.tournament_service import TournamentService
+from services.tournament_service import TournamentService, get_tournament
 
 
 class FakeTournamentCollection:
@@ -14,8 +14,16 @@ class FakeTournamentCollection:
         self.insert_one_calls.append(document)
         return type("InsertResult", (), {"inserted_id": ObjectId()})()
 
-    async def find_one(self, query):
-        return self.documents.get(query["_id"])
+    async def find_one(self, query, projection=None):
+        document = self.documents.get(query["_id"])
+        if not document or not projection:
+            return document
+
+        return {
+            key: value
+            for key, value in document.items()
+            if projection.get(key)
+        }
 
     async def update_one(self, query, update):
         self.update_one_calls.append((query, update))
@@ -45,6 +53,49 @@ class FakeDb:
             return self.users
 
         raise KeyError(name)
+
+
+@pytest.mark.asyncio
+async def test_get_tournament_returns_serialized_public_fields_only():
+    tournament_id = ObjectId()
+    organizer_id = ObjectId()
+    db = FakeDb(
+        tournaments=FakeTournamentCollection(
+            {
+                tournament_id: {
+                    "_id": tournament_id,
+                    "title": "Spring Cup",
+                    "description": "Test event",
+                    "created_by": organizer_id,
+                    "start_date": "2026-05-10",
+                    "end_date": "2026-05-11",
+                    "status": "Draft",
+                    "created_at": 1710000000,
+                    "participant_ids": [ObjectId()],
+                }
+            }
+        )
+    )
+
+    result = await get_tournament(db, tournament_id)
+
+    assert result == {
+        "_id": str(tournament_id),
+        "title": "Spring Cup",
+        "description": "Test event",
+        "created_by": str(organizer_id),
+        "start_date": "2026-05-10",
+        "end_date": "2026-05-11",
+        "status": "Draft",
+        "created_at": 1710000000,
+    }
+
+
+@pytest.mark.asyncio
+async def test_get_tournament_returns_none_when_missing():
+    result = await get_tournament(FakeDb(), ObjectId())
+
+    assert result is None
 
 
 @pytest.mark.asyncio
