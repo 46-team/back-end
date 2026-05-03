@@ -3,7 +3,24 @@ from bson import ObjectId
 from bson.errors import InvalidId
 from dispatchers.authentication.roles import has_role
 from dispatchers.utils.serializers import serialize_mongo_document
+from bson import ObjectId
 
+TOURNAMENT_PUBLIC_FIELDS = {
+    "_id": 1,
+    "title": 1,
+    "description": 1,
+    "created_by": 1,
+    "start_date": 1,
+    "end_date": 1,
+    "status": 1,
+    "created_at": 1,
+}
+
+async def get_tournament(db, tournament_id: ObjectId) -> dict | None:
+    doc = await db["tournaments"].find_one({"_id": tournament_id}, TOURNAMENT_PUBLIC_FIELDS)
+    if not doc:
+        return None
+    return serialize_mongo_document(doc)
 
 class TournamentService:
 

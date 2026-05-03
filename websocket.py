@@ -13,6 +13,7 @@ from dispatchers.utils import FGProto as fgproto
 from dispatchers.authentication.roles import normalize_user_role
 from dispatchers.authentication.get_me import get_me_handler
 from dispatchers.tournaments.create import create_tournament_handler
+from dispatchers.tournaments.tournament_get import get_tournament
 app = FastAPI()
 active_connections = set()
 ENCRYPTION_KEYS = {}
@@ -63,10 +64,10 @@ async def message_handler(websocket: WebSocket, message: str):
             proto=proto,
             ENCRYPTION_KEYS=ENCRYPTION_KEYS
     )
-    elif message['type'] == "assign_tournament_participants":
-        from dispatchers.tournaments.assign_participants import assign_tournament_participants_handler
+    elif message['type'] == "update_user_role":
+        from dispatchers.authentication.update_user_role import update_user_role_handler
 
-        await assign_tournament_participants_handler(
+        await update_user_role_handler(
             client=websocket,
             message=message,
             db=db,
@@ -74,10 +75,16 @@ async def message_handler(websocket: WebSocket, message: str):
             proto=proto,
             ENCRYPTION_KEYS=ENCRYPTION_KEYS
         )
-    elif message['type'] == "update_user_role":
-        from dispatchers.authentication.update_user_role import update_user_role_handler
+    elif message['type'] == "register_account":
+        from dispatchers.authentication.register_account import server_register
 
-        await update_user_role_handler(
+        await server_register(
+            ENCRYPTION_KEYS=ENCRYPTION_KEYS
+    )
+    elif message['type'] == "assign_tournament_participants":
+        from dispatchers.tournaments.assign_participants import assign_tournament_participants_handler
+
+        await assign_tournament_participants_handler(
             client=websocket,
             message=message,
             db=db,
@@ -96,6 +103,15 @@ async def message_handler(websocket: WebSocket, message: str):
         proto=proto,
         ENCRYPTION_KEYS=ENCRYPTION_KEYS,
         save_tokens=save_tokens
+    )
+    elif message['type'] == 'get_tournament':
+        await get_tournament(
+        client=websocket, 
+        message=message, 
+        db=db,
+        USER_TOKENS=USER_TOKENS, 
+        proto=proto, 
+        ENCRYPTION_KEYS=ENCRYPTION_KEYS,
     )
 
     else:

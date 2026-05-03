@@ -1,11 +1,6 @@
-from typing import TYPE_CHECKING, Any
+import dispatchers.utils.FGProto as FGProto
 from fastapi import WebSocket
 from dispatchers.utils.dotenv_dispatcher import env_data
-
-if TYPE_CHECKING:
-    import dispatchers.utils.FGProto as FGProto
-else:
-    FGProto = Any
 
 
 async def err_unknown_mode(proto: FGProto, ENCRYPTION_KEYS: dict, client: WebSocket, type="null") -> None:
@@ -135,17 +130,27 @@ async def err_incorrect_login(proto: FGProto, ENCRYPTION_KEYS: dict, client: Web
 async def err_user_already_exists(proto: FGProto, ENCRYPTION_KEYS: dict, client: WebSocket) -> None:
     proto.Error(
         proto,
-        "User with this login or email already exists.",
+        "A user with this login or email already exists.",
         ENCRYPTION_KEYS[client]['key'],
         "USER_ALREADY_EXISTS"
     )
-
-
-async def err_invalid_password(proto: FGProto, ENCRYPTION_KEYS: dict, client: WebSocket) -> None:
+async def err_invalid_id(proto: FGProto, ENCRYPTION_KEYS: dict, client: WebSocket, type="null") -> None:
     proto.Error(
-        proto,
-        "Password must contain at least 6 characters.",
-        ENCRYPTION_KEYS[client]['key'],
-        "INVALID_PASSWORD"
+        proto=proto,
+        message="Invalid ID provided. Please check your request and try again.",
+        enc_key=ENCRYPTION_KEYS[client]['key'],
+        error_code="INVALID_ID",
+        client=client,
+        type=type
     )
 
+
+async def err_not_found(proto: FGProto, ENCRYPTION_KEYS: dict, client: WebSocket, type="null") -> None:
+    proto.Error(
+        proto=proto,
+        message="The requested resource was not found.",
+        enc_key=ENCRYPTION_KEYS[client]['key'],
+        error_code="NOT_FOUND",
+        client=client,
+        type=type
+    )
