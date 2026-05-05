@@ -198,6 +198,30 @@
       "additionalProperties": true
     },
     {
+      "title": "GetActualTournamentsRequest",
+      "type": "object",
+      "required": ["type", "device_token"],
+      "properties": {
+        "type": { "const": "get_actual_tournaments" },
+        "device_token": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "GetActualTournamentsSuccessResponse",
+      "type": "object",
+      "required": ["is_ok", "type", "tournaments"],
+      "properties": {
+        "is_ok": { "type": "boolean", "const": true },
+        "type": { "const": "get_actual_tournaments" },
+        "tournaments": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/tournament" }
+        }
+      },
+      "additionalProperties": true
+    },
+    {
       "title": "AssignTournamentParticipantsRequest",
       "type": "object",
       "required": ["type", "device_token", "tournament_id", "participant_ids"],
