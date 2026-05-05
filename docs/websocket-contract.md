@@ -355,6 +355,57 @@ Current inline errors:
 }
 ```
 
+### get_actual_tournaments
+
+Returns tournaments available to the authenticated user. Admins receive all
+actual tournaments, organizers receive actual tournaments they created, and
+participant roles receive actual tournaments where their user id is included in
+`participant_ids`. Archived tournaments are not included.
+
+Request:
+
+```json
+{
+  "type": "get_actual_tournaments",
+  "device_token": "device-token"
+}
+```
+
+Required fields:
+
+- `device_token`
+
+Successful response:
+
+```json
+{
+  "is_ok": true,
+  "type": "get_actual_tournaments",
+  "tournaments": [
+    {
+      "_id": "tournament-id",
+      "title": "Spring Cup",
+      "description": "Test event",
+      "created_by": "user-id",
+      "start_date": "2026-05-01",
+      "end_date": "2026-05-03",
+      "status": "Draft",
+      "created_at": 1710000000
+    }
+  ]
+}
+```
+
+Current inline errors:
+
+```json
+{
+  "is_ok": false,
+  "type": "get_actual_tournaments",
+  "error": "Invalid token"
+}
+```
+
 ### assign_tournament_participants
 
 Replaces the participant list for a tournament. The authenticated user must have
