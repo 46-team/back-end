@@ -34,7 +34,8 @@
           "items": { "type": "string" }
         },
         "status": { "type": "string", "const": "Draft" },
-        "created_at": { "type": "integer" }
+        "created_at": { "type": "integer" },
+        "updated_at": { "type": "integer" }
       },
       "additionalProperties": true
     },
@@ -169,6 +170,32 @@
       "properties": {
         "is_ok": { "type": "boolean", "const": true },
         "type": { "const": "create_tournament" },
+        "tournament": { "$ref": "#/$defs/tournament" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "UpdateTournamentRequest",
+      "type": "object",
+      "required": ["type", "device_token", "tournament_id"],
+      "properties": {
+        "type": { "const": "update_tournament" },
+        "device_token": { "type": "string" },
+        "tournament_id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": ["string", "null"] },
+        "start_date": { "type": ["string", "null"] },
+        "end_date": { "type": ["string", "null"] }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "UpdateTournamentSuccessResponse",
+      "type": "object",
+      "required": ["is_ok", "type", "tournament"],
+      "properties": {
+        "is_ok": { "type": "boolean", "const": true },
+        "type": { "const": "update_tournament" },
         "tournament": { "$ref": "#/$defs/tournament" }
       },
       "additionalProperties": true
