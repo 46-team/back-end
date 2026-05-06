@@ -21,7 +21,7 @@ async def change_tournament_status(
     ENCRYPTION_KEYS: dict
 ) -> None:
     
-    if not isinstance(message.get("token"), str):
+    if not isinstance(message.get("device_token"), str):
         await err_empty_token(
             proto=proto, 
             ENCRYPTION_KEYS=ENCRYPTION_KEYS, 
@@ -29,7 +29,7 @@ async def change_tournament_status(
             )
         return
 
-    if not (message["token"] in USER_TOKENS and USER_TOKENS[message["token"]][0] == client):
+    if not (message["device_token"] in USER_TOKENS and USER_TOKENS[message["device_token"]][0] == client):
         await err_invalid_token(
             proto=proto, 
             ENCRYPTION_KEYS=ENCRYPTION_KEYS, 
@@ -58,7 +58,7 @@ async def change_tournament_status(
         )
         return
 
-    user = USER_TOKENS[message["token"]][1]
+    user = USER_TOKENS[message["device_token"]][1]
     db_user = await db["users"].find_one({"_id": user["_id"]}, {"role": 1})
 
     if not db_user or db_user.get("role") != "organizer": 
