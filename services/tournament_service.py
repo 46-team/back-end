@@ -17,6 +17,8 @@ TOURNAMENT_PUBLIC_FIELDS = {
     "updated_at": 1,
 }
 
+ACTUAL_TOURNAMENT_FILTER = {"status": {"$ne": "Archived"}}
+
 async def get_tournament(db, tournament_id: ObjectId) -> dict | None:
     doc = await db["tournaments"].find_one({"_id": tournament_id}, TOURNAMENT_PUBLIC_FIELDS)
     if not doc:
@@ -53,6 +55,36 @@ class TournamentService:
     @staticmethod
     async def get_tournaments(db):
         tournaments_cursor = db["tournaments"].find({})
+
+        tournaments = []
+        async for tournament in tournaments_cursor:
+            tournaments.append(serialize_mongo_document(tournament))
+
+        return tournaments
+
+    @staticmethod
+    async def get_actual_tournaments(db, user):
+        if not user:
+            raise Exception("Authentication required")
+
+        if has_role(user, "admin"):
+            query = ACTUAL_TOURNAMENT_FILTER
+        elif has_role(user, "organizer"):
+            query = {
+                "$and": [
+                    ACTUAL_TOURNAMENT_FILTER,
+                    {"created_by": user["_id"]},
+                ]
+            }
+        else:
+            query = {
+                "$and": [
+                    ACTUAL_TOURNAMENT_FILTER,
+                    {"participant_ids": user["_id"]},
+                ]
+            }
+
+        tournaments_cursor = db["tournaments"].find(query, TOURNAMENT_PUBLIC_FIELDS)
 
         tournaments = []
         async for tournament in tournaments_cursor:

@@ -57,11 +57,6 @@ async def message_handler(websocket: WebSocket, message: str):
         from dispatchers.tournaments.update import update_tournament_handler
 
         await update_tournament_handler(
-            client=websocket,
-            message=message,
-            db=db,
-            USER_TOKENS=USER_TOKENS,
-            proto=proto,
             ENCRYPTION_KEYS=ENCRYPTION_KEYS
         )
 
@@ -75,7 +70,18 @@ async def message_handler(websocket: WebSocket, message: str):
             USER_TOKENS=USER_TOKENS,
             proto=proto,
             ENCRYPTION_KEYS=ENCRYPTION_KEYS
-    )
+        )
+    elif message['type'] == "get_actual_tournaments":
+        from dispatchers.tournaments.get_actual import get_actual_tournaments_handler
+
+        await get_actual_tournaments_handler(
+            client=websocket,
+            message=message,
+            db=db,
+            USER_TOKENS=USER_TOKENS,
+            proto=proto,
+            ENCRYPTION_KEYS=ENCRYPTION_KEYS
+        )
     elif message['type'] == "update_user_role":
         from dispatchers.authentication.update_user_role import update_user_role_handler
 

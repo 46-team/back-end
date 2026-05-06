@@ -89,6 +89,21 @@ Known messages:
 }
 ```
 
+### get_actual_tournaments
+
+```json
+{
+  "is_ok": false,
+  "type": "get_actual_tournaments",
+  "error": "Invalid token"
+}
+```
+
+Known messages:
+
+- `Invalid token`
+- `Authentication required`
+
 ### assign_tournament_participants
 
 ```json
