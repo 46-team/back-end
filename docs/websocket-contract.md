@@ -243,6 +243,36 @@ Known errors:
 
 - `#INSECURE_CONNECTION`
 
+### logout
+
+Revokes the active server-managed device token for the current WebSocket client.
+
+Request:
+
+```json
+{
+  "type": "logout",
+  "device_token": "device-token"
+}
+```
+
+Required fields:
+
+- `device_token`
+
+Successful response:
+
+```json
+{
+  "is_ok": true,
+  "type": "logout"
+}
+```
+
+Known errors:
+
+- `#INSECURE_CONNECTION`
+
 ### create_tournament
 
 Creates a tournament. The authenticated user must have the `organizer` role.

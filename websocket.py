@@ -42,6 +42,18 @@ async def message_handler(websocket: WebSocket, message: str):
             proto=proto,
             ENCRYPTION_KEYS=ENCRYPTION_KEYS
         )
+
+    elif message['type'] == "logout":
+        from dispatchers.authentication.logout import logout_handler
+
+        await logout_handler(
+            client=websocket,
+            message=message,
+            USER_TOKENS=USER_TOKENS,
+            proto=proto,
+            ENCRYPTION_KEYS=ENCRYPTION_KEYS,
+            save_tokens=save_tokens
+        )
         
     elif message['type'] == "create_tournament":
         await create_tournament_handler(
