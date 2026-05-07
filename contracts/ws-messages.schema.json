@@ -150,6 +150,26 @@
       "additionalProperties": true
     },
     {
+      "title": "LogoutRequest",
+      "type": "object",
+      "required": ["type", "device_token"],
+      "properties": {
+        "type": { "const": "logout" },
+        "device_token": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "LogoutSuccessResponse",
+      "type": "object",
+      "required": ["is_ok", "type"],
+      "properties": {
+        "is_ok": { "type": "boolean", "const": true },
+        "type": { "const": "logout" }
+      },
+      "additionalProperties": true
+    },
+    {
       "title": "CreateTournamentRequest",
       "type": "object",
       "required": ["type", "device_token", "title"],
