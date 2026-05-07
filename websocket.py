@@ -69,6 +69,11 @@ async def message_handler(websocket: WebSocket, message: str):
         from dispatchers.tournaments.update import update_tournament_handler
 
         await update_tournament_handler(
+            client=websocket,
+            message=message,
+            db=db,
+            USER_TOKENS=USER_TOKENS,
+            proto=proto,
             ENCRYPTION_KEYS=ENCRYPTION_KEYS
         )
 
