@@ -144,6 +144,21 @@ Known messages:
 - `User not found`
 - `Users cannot change their own role`
 
+### search_users
+
+```json
+{
+  "is_ok": false,
+  "type": "search_users",
+  "error": "Access denied"
+}
+```
+
+Known messages:
+
+- `Authentication required`
+- `Access denied`
+
 ## Recommendation
 
 New handlers should prefer the standard error shape with `err_code`. Existing
