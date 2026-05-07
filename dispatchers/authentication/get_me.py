@@ -1,6 +1,5 @@
 from fastapi import WebSocket
 from dispatchers.utils.error_templates import err_invalid_token
-from dispatchers.utils.utils import find_token_by_websocket
 from dispatchers.utils.serializers import serialize_public_user
 
 
@@ -16,10 +15,7 @@ async def get_me_handler(client: WebSocket, message: dict, USER_TOKENS: dict, pr
         return
 
     session = USER_TOKENS[token]
-
-    if session[0] != client:
-        await err_invalid_token(proto, ENCRYPTION_KEYS, client, type="get_me")
-        return
+    session[0] = client
 
     user = serialize_public_user(session[1])
 
