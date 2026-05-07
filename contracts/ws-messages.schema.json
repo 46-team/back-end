@@ -17,7 +17,7 @@
         "login": { "type": "string" },
         "role": { "$ref": "#/$defs/role" }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "tournament": {
       "type": "object",
@@ -319,6 +319,41 @@
         "is_ok": { "type": "boolean", "const": true },
         "type": { "const": "update_user_role" },
         "user": { "$ref": "#/$defs/publicUser" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "SearchUsersRequest",
+      "type": "object",
+      "required": ["type", "device_token"],
+      "properties": {
+        "type": { "const": "search_users" },
+        "device_token": { "type": "string" },
+        "purpose": {
+          "type": "string",
+          "enum": ["role_management", "tournament_participants"]
+        },
+        "query": { "type": "string" },
+        "search": { "type": "string" },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "SearchUsersSuccessResponse",
+      "type": "object",
+      "required": ["is_ok", "type", "users"],
+      "properties": {
+        "is_ok": { "type": "boolean", "const": true },
+        "type": { "const": "search_users" },
+        "users": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/publicUser" }
+        }
       },
       "additionalProperties": true
     },

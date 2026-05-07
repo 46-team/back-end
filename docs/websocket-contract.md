@@ -637,6 +637,74 @@ Possible error messages include:
 - `User not found`
 - `Users cannot change their own role`
 
+### search_users
+
+Searches public user records for role management or tournament participant
+assignment.
+
+Admins may use `purpose: "role_management"` to retrieve users for role
+management. Organizers may use `purpose: "tournament_participants"` to retrieve
+eligible tournament participants.
+
+Request:
+
+```json
+{
+  "type": "search_users",
+  "device_token": "device-token",
+  "purpose": "role_management",
+  "query": "bob",
+  "limit": 20
+}
+```
+
+Required fields:
+
+- `device_token`
+
+Optional fields:
+
+- `purpose`: `role_management` or `tournament_participants`
+- `query`: case-insensitive search text matched against `email`, `full_name`, and `login`
+- `search`: accepted as an alias for `query`
+- `limit`: maximum result count from 1 to 100; defaults to 20
+
+Successful response:
+
+```json
+{
+  "is_ok": true,
+  "type": "search_users",
+  "users": [
+    {
+      "_id": "user-id",
+      "email": "bob@example.com",
+      "full_name": "Bob Example",
+      "login": "bob",
+      "role": "team"
+    }
+  ]
+}
+```
+
+Only public user fields are returned: `_id`, `email`, `full_name`, `login`, and
+`role`. Passwords and private fields are never returned.
+
+Current inline errors:
+
+```json
+{
+  "is_ok": false,
+  "type": "search_users",
+  "error": "Access denied"
+}
+```
+
+Possible error messages include:
+
+- `Authentication required`
+- `Access denied`
+
 ### echo
 
 Returns the provided message payload.

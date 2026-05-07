@@ -110,6 +110,17 @@ async def message_handler(websocket: WebSocket, message: str):
             proto=proto,
             ENCRYPTION_KEYS=ENCRYPTION_KEYS
         )
+    elif message['type'] == "search_users":
+        from dispatchers.authentication.search_users import search_users_handler
+
+        await search_users_handler(
+            client=websocket,
+            message=message,
+            db=db,
+            USER_TOKENS=USER_TOKENS,
+            proto=proto,
+            ENCRYPTION_KEYS=ENCRYPTION_KEYS
+        )
     elif message['type'] == "assign_tournament_participants":
         from dispatchers.tournaments.assign_participants import assign_tournament_participants_handler
 
