@@ -4,7 +4,7 @@ from bson import ObjectId
 from bson.errors import InvalidId
 from dispatchers.authentication.roles import has_role
 from dispatchers.utils.serializers import serialize_mongo_document
-
+ALLOWED_STATUSES = {"Draft", "Registration", "Running", "Finished"}
 TOURNAMENT_PUBLIC_FIELDS = {
     "_id": 1,
     "title": 1,
@@ -16,6 +16,13 @@ TOURNAMENT_PUBLIC_FIELDS = {
     "created_at": 1,
     "updated_at": 1,
 }
+async def change_tournament_status(db, tournament_id: ObjectId, status: str) -> dict | None:
+    await db["tournaments"].update_one(
+        {"_id": tournament_id},
+        {"$set": {"status": status, "updated_at": int(time.time())}}
+    )
+    return await get_tournament(db, tournament_id)
+
 
 ACTUAL_TOURNAMENT_FILTER = {"status": {"$ne": "Archived"}}
 

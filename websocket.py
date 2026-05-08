@@ -14,6 +14,8 @@ from dispatchers.authentication.roles import normalize_user_role
 from dispatchers.authentication.get_me import get_me_handler
 from dispatchers.tournaments.create import create_tournament_handler
 from dispatchers.tournaments.tournament_get import get_tournament
+from dispatchers.tournaments.change_tournament_status import change_tournament_status
+
 app = FastAPI()
 active_connections = set()
 ENCRYPTION_KEYS = {}
@@ -153,7 +155,15 @@ async def message_handler(websocket: WebSocket, message: str):
             proto=proto,
             ENCRYPTION_KEYS=ENCRYPTION_KEYS,
         )
-
+    elif message['type'] == 'change_tournament_status':
+        await change_tournament_status(
+        client=websocket, 
+        message=message, 
+        db=db,
+        USER_TOKENS=USER_TOKENS, 
+        proto=proto, 
+        ENCRYPTION_KEYS=ENCRYPTION_KEYS,
+        )
     else:
         await err_unknown_request(proto=proto, ENCRYPTION_KEYS=ENCRYPTION_KEYS, client=websocket)
 
