@@ -58,6 +58,27 @@ Known messages:
 - `Access denied`
 - `Invalid tournament data: 'title' is required`
 
+### update_tournament
+
+```json
+{
+  "is_ok": false,
+  "type": "update_tournament",
+  "error": "Tournament not found"
+}
+```
+
+Known messages:
+
+- `Authentication required`
+- `Access denied`
+- `Required data is missing`
+- `Invalid tournament_id`
+- `Tournament not found`
+- `Invalid tournament data: 'title' cannot be empty`
+- `Invalid tournament dates`
+- `Invalid tournament dates: 'start_date' must be earlier than 'end_date'`
+
 ### get_tournaments
 
 ```json
@@ -67,6 +88,21 @@ Known messages:
   "error": "Invalid token"
 }
 ```
+
+### get_actual_tournaments
+
+```json
+{
+  "is_ok": false,
+  "type": "get_actual_tournaments",
+  "error": "Invalid token"
+}
+```
+
+Known messages:
+
+- `Invalid token`
+- `Authentication required`
 
 ### assign_tournament_participants
 

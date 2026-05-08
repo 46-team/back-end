@@ -34,7 +34,8 @@
           "items": { "type": "string" }
         },
         "status": { "type": "string", "const": "Draft" },
-        "created_at": { "type": "integer" }
+        "created_at": { "type": "integer" },
+        "updated_at": { "type": "integer" }
       },
       "additionalProperties": true
     },
@@ -174,6 +175,32 @@
       "additionalProperties": true
     },
     {
+      "title": "UpdateTournamentRequest",
+      "type": "object",
+      "required": ["type", "device_token", "tournament_id"],
+      "properties": {
+        "type": { "const": "update_tournament" },
+        "device_token": { "type": "string" },
+        "tournament_id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": ["string", "null"] },
+        "start_date": { "type": ["string", "null"] },
+        "end_date": { "type": ["string", "null"] }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "UpdateTournamentSuccessResponse",
+      "type": "object",
+      "required": ["is_ok", "type", "tournament"],
+      "properties": {
+        "is_ok": { "type": "boolean", "const": true },
+        "type": { "const": "update_tournament" },
+        "tournament": { "$ref": "#/$defs/tournament" }
+      },
+      "additionalProperties": true
+    },
+    {
       "title": "GetTournamentsRequest",
       "type": "object",
       "required": ["type", "device_token"],
@@ -190,6 +217,30 @@
       "properties": {
         "is_ok": { "type": "boolean", "const": true },
         "type": { "const": "get_tournaments" },
+        "tournaments": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/tournament" }
+        }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "GetActualTournamentsRequest",
+      "type": "object",
+      "required": ["type", "device_token"],
+      "properties": {
+        "type": { "const": "get_actual_tournaments" },
+        "device_token": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "GetActualTournamentsSuccessResponse",
+      "type": "object",
+      "required": ["is_ok", "type", "tournaments"],
+      "properties": {
+        "is_ok": { "type": "boolean", "const": true },
+        "type": { "const": "get_actual_tournaments" },
         "tournaments": {
           "type": "array",
           "items": { "$ref": "#/$defs/tournament" }

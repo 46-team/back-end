@@ -25,11 +25,70 @@ class FakeTournamentCollection:
             if projection.get(key)
         }
 
+    def find(self, query, projection=None):
+        documents = [
+            self._apply_projection(document, projection)
+            for document in self.documents.values()
+            if self._matches_query(document, query)
+        ]
+        return FakeAsyncCursor(documents)
+
     async def update_one(self, query, update):
         self.update_one_calls.append((query, update))
         document = self.documents.get(query["_id"])
         if document:
             document.update(update.get("$set", {}))
+
+    def _apply_projection(self, document, projection):
+        if not projection:
+            return document
+
+        return {
+            key: value
+            for key, value in document.items()
+            if projection.get(key)
+        }
+
+    def _matches_query(self, document, query):
+        if not query:
+            return True
+
+        for key, expected in query.items():
+            if key == "$and":
+                if not all(self._matches_query(document, item) for item in expected):
+                    return False
+                continue
+
+            actual = document.get(key)
+            if isinstance(expected, dict):
+                if "$ne" in expected and actual == expected["$ne"]:
+                    return False
+                continue
+
+            if isinstance(actual, list):
+                if expected not in actual:
+                    return False
+                continue
+
+            if actual != expected:
+                return False
+
+        return True
+
+
+class FakeAsyncCursor:
+    def __init__(self, documents):
+        self.documents = documents
+
+    def __aiter__(self):
+        self._iterator = iter(self.documents)
+        return self
+
+    async def __anext__(self):
+        try:
+            return next(self._iterator)
+        except StopIteration:
+            raise StopAsyncIteration
 
 
 class FakeUsersCollection:
@@ -141,6 +200,127 @@ async def test_create_tournament_requires_title():
             data={},
             user={"_id": ObjectId(), "role": "organizer"},
         )
+
+
+@pytest.mark.asyncio
+async def test_get_actual_tournaments_for_participant_returns_assigned_tournaments_only():
+    participant_id = ObjectId()
+    other_participant_id = ObjectId()
+    organizer_id = ObjectId()
+    assigned_tournament_id = ObjectId()
+    unassigned_tournament_id = ObjectId()
+    archived_tournament_id = ObjectId()
+    db = FakeDb(
+        tournaments=FakeTournamentCollection(
+            {
+                assigned_tournament_id: {
+                    "_id": assigned_tournament_id,
+                    "title": "Assigned Cup",
+                    "created_by": organizer_id,
+                    "status": "Draft",
+                    "created_at": 1710000000,
+                    "participant_ids": [participant_id],
+                },
+                unassigned_tournament_id: {
+                    "_id": unassigned_tournament_id,
+                    "title": "Other Cup",
+                    "created_by": organizer_id,
+                    "status": "Draft",
+                    "created_at": 1710000001,
+                    "participant_ids": [other_participant_id],
+                },
+                archived_tournament_id: {
+                    "_id": archived_tournament_id,
+                    "title": "Archived Cup",
+                    "created_by": organizer_id,
+                    "status": "Archived",
+                    "created_at": 1710000002,
+                    "participant_ids": [participant_id],
+                },
+            }
+        )
+    )
+
+    result = await TournamentService.get_actual_tournaments(
+        db=db,
+        user={"_id": participant_id, "role": "team"},
+    )
+
+    assert [tournament["_id"] for tournament in result] == [str(assigned_tournament_id)]
+    assert "participant_ids" not in result[0]
+
+
+@pytest.mark.asyncio
+async def test_get_actual_tournaments_for_organizer_returns_created_tournaments_only():
+    organizer_id = ObjectId()
+    other_organizer_id = ObjectId()
+    created_tournament_id = ObjectId()
+    other_tournament_id = ObjectId()
+    db = FakeDb(
+        tournaments=FakeTournamentCollection(
+            {
+                created_tournament_id: {
+                    "_id": created_tournament_id,
+                    "title": "Created Cup",
+                    "created_by": organizer_id,
+                    "status": "Draft",
+                    "created_at": 1710000000,
+                    "participant_ids": [],
+                },
+                other_tournament_id: {
+                    "_id": other_tournament_id,
+                    "title": "Other Organizer Cup",
+                    "created_by": other_organizer_id,
+                    "status": "Draft",
+                    "created_at": 1710000001,
+                    "participant_ids": [organizer_id],
+                },
+            }
+        )
+    )
+
+    result = await TournamentService.get_actual_tournaments(
+        db=db,
+        user={"_id": organizer_id, "role": "organizer"},
+    )
+
+    assert [tournament["_id"] for tournament in result] == [str(created_tournament_id)]
+
+
+@pytest.mark.asyncio
+async def test_get_actual_tournaments_for_admin_returns_all_actual_tournaments():
+    organizer_id = ObjectId()
+    actual_tournament_id = ObjectId()
+    archived_tournament_id = ObjectId()
+    db = FakeDb(
+        tournaments=FakeTournamentCollection(
+            {
+                actual_tournament_id: {
+                    "_id": actual_tournament_id,
+                    "title": "Actual Cup",
+                    "created_by": organizer_id,
+                    "status": "Draft",
+                    "created_at": 1710000000,
+                    "participant_ids": [],
+                },
+                archived_tournament_id: {
+                    "_id": archived_tournament_id,
+                    "title": "Archived Cup",
+                    "created_by": organizer_id,
+                    "status": "Archived",
+                    "created_at": 1710000001,
+                    "participant_ids": [],
+                },
+            }
+        )
+    )
+
+    result = await TournamentService.get_actual_tournaments(
+        db=db,
+        user={"_id": ObjectId(), "role": "admin"},
+    )
+
+    assert [tournament["_id"] for tournament in result] == [str(actual_tournament_id)]
 
 
 @pytest.mark.asyncio
@@ -336,3 +516,201 @@ async def test_assign_participants_rejects_missing_user():
             participant_ids=[str(ObjectId())],
             user={"_id": organizer_id, "role": "organizer"},
         )
+
+
+@pytest.mark.asyncio
+async def test_update_tournament_for_organizer_updates_allowed_fields():
+    tournament_id = ObjectId()
+    organizer_id = ObjectId()
+    db = FakeDb(
+        tournaments=FakeTournamentCollection(
+            {
+                tournament_id: {
+                    "_id": tournament_id,
+                    "title": "Spring Cup",
+                    "description": "Old description",
+                    "created_by": organizer_id,
+                    "start_date": "2026-05-10",
+                    "end_date": "2026-05-12",
+                    "status": "Draft",
+                    "created_at": 1710000000,
+                    "participant_ids": [],
+                }
+            }
+        )
+    )
+
+    result = await TournamentService.update_tournament(
+        db=db,
+        tournament_id=str(tournament_id),
+        data={
+            "title": "Summer Cup",
+            "description": "New description",
+            "start_date": "2026-05-11",
+            "end_date": "2026-05-13",
+            "status": "Published",
+        },
+        user={"_id": organizer_id, "role": "organizer"},
+    )
+
+    assert result["_id"] == str(tournament_id)
+    assert result["title"] == "Summer Cup"
+    assert result["description"] == "New description"
+    assert result["start_date"] == "2026-05-11"
+    assert result["end_date"] == "2026-05-13"
+    assert result["status"] == "Draft"
+    assert isinstance(result["updated_at"], int)
+
+    update = db.tournaments.update_one_calls[0][1]["$set"]
+    assert update["title"] == "Summer Cup"
+    assert update["description"] == "New description"
+    assert update["start_date"] == "2026-05-11"
+    assert update["end_date"] == "2026-05-13"
+    assert "status" not in update
+    assert isinstance(update["updated_at"], int)
+
+
+@pytest.mark.asyncio
+async def test_update_tournament_rejects_non_organizer():
+    db = FakeDb()
+
+    with pytest.raises(Exception, match="Access denied"):
+        await TournamentService.update_tournament(
+            db=db,
+            tournament_id=str(ObjectId()),
+            data={"title": "Summer Cup"},
+            user={"_id": ObjectId(), "role": "team"},
+        )
+
+
+@pytest.mark.asyncio
+async def test_update_tournament_requires_tournament_id():
+    db = FakeDb()
+
+    with pytest.raises(Exception, match="Required data is missing"):
+        await TournamentService.update_tournament(
+            db=db,
+            tournament_id=None,
+            data={"title": "Summer Cup"},
+            user={"_id": ObjectId(), "role": "organizer"},
+        )
+
+
+@pytest.mark.asyncio
+async def test_update_tournament_rejects_invalid_tournament_id():
+    db = FakeDb()
+
+    with pytest.raises(Exception, match="Invalid tournament_id"):
+        await TournamentService.update_tournament(
+            db=db,
+            tournament_id="not-an-object-id",
+            data={"title": "Summer Cup"},
+            user={"_id": ObjectId(), "role": "organizer"},
+        )
+
+
+@pytest.mark.asyncio
+async def test_update_tournament_rejects_missing_tournament():
+    db = FakeDb()
+
+    with pytest.raises(Exception, match="Tournament not found"):
+        await TournamentService.update_tournament(
+            db=db,
+            tournament_id=str(ObjectId()),
+            data={"title": "Summer Cup"},
+            user={"_id": ObjectId(), "role": "organizer"},
+        )
+
+
+@pytest.mark.asyncio
+async def test_update_tournament_rejects_different_organizer():
+    tournament_id = ObjectId()
+    tournament_owner_id = ObjectId()
+    other_organizer_id = ObjectId()
+    db = FakeDb(
+        tournaments=FakeTournamentCollection(
+            {
+                tournament_id: {
+                    "_id": tournament_id,
+                    "title": "Spring Cup",
+                    "created_by": tournament_owner_id,
+                    "start_date": "2026-05-10",
+                    "end_date": "2026-05-12",
+                    "status": "Draft",
+                    "created_at": 1710000000,
+                }
+            }
+        )
+    )
+
+    with pytest.raises(Exception, match="Access denied"):
+        await TournamentService.update_tournament(
+            db=db,
+            tournament_id=str(tournament_id),
+            data={"title": "Summer Cup"},
+            user={"_id": other_organizer_id, "role": "organizer"},
+        )
+
+    assert db.tournaments.update_one_calls == []
+
+
+@pytest.mark.asyncio
+async def test_update_tournament_rejects_empty_title():
+    tournament_id = ObjectId()
+    organizer_id = ObjectId()
+    db = FakeDb(
+        tournaments=FakeTournamentCollection(
+            {
+                tournament_id: {
+                    "_id": tournament_id,
+                    "title": "Spring Cup",
+                    "created_by": organizer_id,
+                    "start_date": "2026-05-10",
+                    "end_date": "2026-05-12",
+                    "status": "Draft",
+                    "created_at": 1710000000,
+                }
+            }
+        )
+    )
+
+    with pytest.raises(Exception, match="title"):
+        await TournamentService.update_tournament(
+            db=db,
+            tournament_id=str(tournament_id),
+            data={"title": "   "},
+            user={"_id": organizer_id, "role": "organizer"},
+        )
+
+    assert db.tournaments.update_one_calls == []
+
+
+@pytest.mark.asyncio
+async def test_update_tournament_rejects_invalid_date_order():
+    tournament_id = ObjectId()
+    organizer_id = ObjectId()
+    db = FakeDb(
+        tournaments=FakeTournamentCollection(
+            {
+                tournament_id: {
+                    "_id": tournament_id,
+                    "title": "Spring Cup",
+                    "created_by": organizer_id,
+                    "start_date": "2026-05-10",
+                    "end_date": "2026-05-12",
+                    "status": "Draft",
+                    "created_at": 1710000000,
+                }
+            }
+        )
+    )
+
+    with pytest.raises(Exception, match="start_date"):
+        await TournamentService.update_tournament(
+            db=db,
+            tournament_id=str(tournament_id),
+            data={"start_date": "2026-05-13"},
+            user={"_id": organizer_id, "role": "organizer"},
+        )
+
+    assert db.tournaments.update_one_calls == []

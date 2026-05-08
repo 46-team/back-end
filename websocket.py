@@ -55,6 +55,13 @@ async def message_handler(websocket: WebSocket, message: str):
             ENCRYPTION_KEYS=ENCRYPTION_KEYS
         )
 
+    elif message['type'] == "update_tournament":
+        from dispatchers.tournaments.update import update_tournament_handler
+
+        await update_tournament_handler(
+            ENCRYPTION_KEYS=ENCRYPTION_KEYS
+        )
+
     elif message['type'] == "get_tournaments":
         from dispatchers.tournaments.get_all import get_tournaments_handler
 
@@ -65,7 +72,18 @@ async def message_handler(websocket: WebSocket, message: str):
             USER_TOKENS=USER_TOKENS,
             proto=proto,
             ENCRYPTION_KEYS=ENCRYPTION_KEYS
-    )
+        )
+    elif message['type'] == "get_actual_tournaments":
+        from dispatchers.tournaments.get_actual import get_actual_tournaments_handler
+
+        await get_actual_tournaments_handler(
+            client=websocket,
+            message=message,
+            db=db,
+            USER_TOKENS=USER_TOKENS,
+            proto=proto,
+            ENCRYPTION_KEYS=ENCRYPTION_KEYS
+        )
     elif message['type'] == "update_user_role":
         from dispatchers.authentication.update_user_role import update_user_role_handler
 
@@ -90,6 +108,25 @@ async def message_handler(websocket: WebSocket, message: str):
         )
     elif message['type'] == "register_account":
         from dispatchers.authentication.register_account import server_register
+
+        await server_register(
+            client=websocket,
+            message=message,
+            db=db,
+            USER_TOKENS=USER_TOKENS,
+            proto=proto,
+            ENCRYPTION_KEYS=ENCRYPTION_KEYS,
+            save_tokens=save_tokens
+        )
+    elif message['type'] == 'get_tournament':
+        await get_tournament(
+            client=websocket,
+            message=message,
+            db=db,
+            USER_TOKENS=USER_TOKENS,
+            proto=proto,
+            ENCRYPTION_KEYS=ENCRYPTION_KEYS,
+        )
 
         await server_register(
             client=websocket,
