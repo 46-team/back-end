@@ -127,25 +127,6 @@ async def message_handler(websocket: WebSocket, message: str):
             proto=proto,
             ENCRYPTION_KEYS=ENCRYPTION_KEYS,
         )
-
-        await server_register(
-            client=websocket,
-            message=message,
-            db=db,
-            USER_TOKENS=USER_TOKENS,
-            proto=proto,
-            ENCRYPTION_KEYS=ENCRYPTION_KEYS,
-            save_tokens=save_tokens
-        )
-    elif message['type'] == 'get_tournament':
-        await get_tournament(
-            client=websocket,
-            message=message,
-            db=db,
-            USER_TOKENS=USER_TOKENS,
-            proto=proto,
-            ENCRYPTION_KEYS=ENCRYPTION_KEYS,
-        )
     elif message['type'] == 'change_tournament_status':
         await change_tournament_status(
         client=websocket, 
