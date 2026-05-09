@@ -277,6 +277,83 @@ async def test_create_tournament_for_organizer_returns_serialized_tournament():
     assert isinstance(result["_id"], str)
     assert db.tournaments.insert_one_calls[0]["title"] == "Spring Cup"
     assert db.tournaments.insert_one_calls[0]["participant_ids"] == []
+    assert db.tournaments.insert_one_calls[0]["start_date"] is None
+    assert db.tournaments.insert_one_calls[0]["end_date"] is None
+
+
+@pytest.mark.asyncio
+async def test_create_tournament_accepts_valid_dates():
+    db = FakeDb()
+    user_id = ObjectId()
+
+    result = await TournamentService.create_tournament(
+        db=db,
+        data={
+            "title": "Spring Cup",
+            "start_date": "2026-05-10T10:00:00",
+            "end_date": "2026-05-11T10:00:00",
+        },
+        user={"_id": user_id, "role": "organizer"},
+    )
+
+    assert result["start_date"] == "2026-05-10T10:00:00"
+    assert result["end_date"] == "2026-05-11T10:00:00"
+    assert db.tournaments.insert_one_calls[0]["start_date"] == "2026-05-10T10:00:00"
+    assert db.tournaments.insert_one_calls[0]["end_date"] == "2026-05-11T10:00:00"
+
+
+@pytest.mark.asyncio
+async def test_create_tournament_rejects_invalid_date_format():
+    db = FakeDb()
+
+    with pytest.raises(Exception, match="Invalid tournament dates"):
+        await TournamentService.create_tournament(
+            db=db,
+            data={
+                "title": "Spring Cup",
+                "start_date": "not-a-date",
+                "end_date": "2026-05-11T10:00:00",
+            },
+            user={"_id": ObjectId(), "role": "organizer"},
+        )
+
+    assert db.tournaments.insert_one_calls == []
+
+
+@pytest.mark.asyncio
+async def test_create_tournament_rejects_equal_dates():
+    db = FakeDb()
+
+    with pytest.raises(Exception, match="start_date"):
+        await TournamentService.create_tournament(
+            db=db,
+            data={
+                "title": "Spring Cup",
+                "start_date": "2026-05-10T10:00:00",
+                "end_date": "2026-05-10T10:00:00",
+            },
+            user={"_id": ObjectId(), "role": "organizer"},
+        )
+
+    assert db.tournaments.insert_one_calls == []
+
+
+@pytest.mark.asyncio
+async def test_create_tournament_rejects_start_date_after_end_date():
+    db = FakeDb()
+
+    with pytest.raises(Exception, match="start_date"):
+        await TournamentService.create_tournament(
+            db=db,
+            data={
+                "title": "Spring Cup",
+                "start_date": "2026-05-12T10:00:00",
+                "end_date": "2026-05-11T10:00:00",
+            },
+            user={"_id": ObjectId(), "role": "organizer"},
+        )
+
+    assert db.tournaments.insert_one_calls == []
 
 
 @pytest.mark.asyncio
