@@ -29,6 +29,21 @@ async def change_tournament_status(db, tournament_id: ObjectId, status: str, use
 
 ACTUAL_TOURNAMENT_FILTER = {"status": {"$ne": "Archived"}}
 
+
+def _validate_tournament_dates(start_date, end_date):
+    if start_date is None or end_date is None:
+        return
+
+    try:
+        parsed_start = datetime.fromisoformat(start_date)
+        parsed_end = datetime.fromisoformat(end_date)
+    except (TypeError, ValueError):
+        raise Exception("Invalid tournament dates")
+
+    if parsed_start >= parsed_end:
+        raise Exception("Invalid tournament dates: 'start_date' must be earlier than 'end_date'")
+
+
 async def get_tournament(db, tournament_id: ObjectId) -> dict | None:
     doc = await db["tournaments"].find_one({"_id": tournament_id}, TOURNAMENT_DETAIL_FIELDS)
     if not doc:
@@ -55,6 +70,8 @@ class TournamentService:
 
         if "title" not in data:
             raise Exception("Invalid tournament data: 'title' is required")
+
+        _validate_tournament_dates(data.get("start_date"), data.get("end_date"))
 
         tournament = {
             "title": data["title"],
@@ -188,15 +205,7 @@ class TournamentService:
 
         start_date = updates.get("start_date", tournament.get("start_date"))
         end_date = updates.get("end_date", tournament.get("end_date"))
-        if start_date is not None and end_date is not None:
-            try:
-                parsed_start = datetime.fromisoformat(start_date)
-                parsed_end = datetime.fromisoformat(end_date)
-            except (TypeError, ValueError):
-                raise Exception("Invalid tournament dates")
-
-            if parsed_start >= parsed_end:
-                raise Exception("Invalid tournament dates: 'start_date' must be earlier than 'end_date'")
+        _validate_tournament_dates(start_date, end_date)
 
         updates["updated_at"] = int(time.time())
 
