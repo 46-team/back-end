@@ -118,6 +118,7 @@ class FakeDb:
 async def test_get_tournament_returns_serialized_public_fields_only():
     tournament_id = ObjectId()
     organizer_id = ObjectId()
+    participant_id = ObjectId()
     db = FakeDb(
         tournaments=FakeTournamentCollection(
             {
@@ -130,10 +131,23 @@ async def test_get_tournament_returns_serialized_public_fields_only():
                     "end_date": "2026-05-11",
                     "status": "Draft",
                     "created_at": 1710000000,
-                    "participant_ids": [ObjectId()],
+                    "participant_ids": [participant_id],
                 }
             }
-        )
+        ),
+        users=FakeUsersCollection(
+            {
+                participant_id: {
+                    "_id": participant_id,
+                    "email": "participant@example.com",
+                    "full_name": "Participant User",
+                    "login": "participant",
+                    "role": "team",
+                    "password": "secret",
+                    "device_tokens": ["private-token"],
+                }
+            }
+        ),
     )
 
     result = await get_tournament(db, tournament_id)
@@ -147,7 +161,86 @@ async def test_get_tournament_returns_serialized_public_fields_only():
         "end_date": "2026-05-11",
         "status": "Draft",
         "created_at": 1710000000,
+        "participants": [
+            {
+                "_id": str(participant_id),
+                "email": "participant@example.com",
+                "full_name": "Participant User",
+                "login": "participant",
+                "role": "team",
+            }
+        ],
     }
+
+
+@pytest.mark.asyncio
+async def test_get_tournament_returns_empty_participants_when_none_assigned():
+    tournament_id = ObjectId()
+    db = FakeDb(
+        tournaments=FakeTournamentCollection(
+            {
+                tournament_id: {
+                    "_id": tournament_id,
+                    "title": "Spring Cup",
+                    "created_by": ObjectId(),
+                    "status": "Draft",
+                    "created_at": 1710000000,
+                    "participant_ids": [],
+                }
+            }
+        )
+    )
+
+    result = await get_tournament(db, tournament_id)
+
+    assert result["participants"] == []
+    assert "participant_ids" not in result
+
+
+@pytest.mark.asyncio
+async def test_get_tournament_skips_missing_participant_users():
+    tournament_id = ObjectId()
+    existing_participant_id = ObjectId()
+    missing_participant_id = ObjectId()
+    db = FakeDb(
+        tournaments=FakeTournamentCollection(
+            {
+                tournament_id: {
+                    "_id": tournament_id,
+                    "title": "Spring Cup",
+                    "created_by": ObjectId(),
+                    "status": "Draft",
+                    "created_at": 1710000000,
+                    "participant_ids": [existing_participant_id, missing_participant_id],
+                }
+            }
+        ),
+        users=FakeUsersCollection(
+            {
+                existing_participant_id: {
+                    "_id": existing_participant_id,
+                    "email": "existing@example.com",
+                    "full_name": "Existing User",
+                    "login": "existing",
+                    "role": "team",
+                    "password": "secret",
+                }
+            }
+        ),
+    )
+
+    result = await get_tournament(db, tournament_id)
+
+    assert result["participants"] == [
+        {
+            "_id": str(existing_participant_id),
+            "email": "existing@example.com",
+            "full_name": "Existing User",
+            "login": "existing",
+            "role": "team",
+        }
+    ]
+    assert "participant_ids" not in result
 
 
 @pytest.mark.asyncio

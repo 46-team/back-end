@@ -3,13 +3,14 @@ import asyncio
 from bson import ObjectId
 
 from dispatchers.tournaments.tournament_get import get_tournament
-from tests.test_tournament_service import FakeDb, FakeTournamentCollection
+from tests.test_tournament_service import FakeDb, FakeTournamentCollection, FakeUsersCollection
 
 
 async def test_get_tournament_handler_returns_tournament(client, encryption_keys, proto):
     token = "organizer-token"
     tournament_id = ObjectId()
     organizer_id = ObjectId()
+    participant_id = ObjectId()
     db = FakeDb(
         tournaments=FakeTournamentCollection(
             {
@@ -20,10 +21,22 @@ async def test_get_tournament_handler_returns_tournament(client, encryption_keys
                     "created_by": organizer_id,
                     "status": "Draft",
                     "created_at": 1710000000,
-                    "participant_ids": [ObjectId()],
+                    "participant_ids": [participant_id],
                 }
             }
-        )
+        ),
+        users=FakeUsersCollection(
+            {
+                participant_id: {
+                    "_id": participant_id,
+                    "email": "participant@example.com",
+                    "full_name": "Participant User",
+                    "login": "participant",
+                    "role": "team",
+                    "password": "secret",
+                }
+            }
+        ),
     )
 
     await get_tournament(
@@ -45,6 +58,15 @@ async def test_get_tournament_handler_returns_tournament(client, encryption_keys
     assert payload["type"] == "get_tournament"
     assert payload["tournament"]["_id"] == str(tournament_id)
     assert payload["tournament"]["created_by"] == str(organizer_id)
+    assert payload["tournament"]["participants"] == [
+        {
+            "_id": str(participant_id),
+            "email": "participant@example.com",
+            "full_name": "Participant User",
+            "login": "participant",
+            "role": "team",
+        }
+    ]
     assert "participant_ids" not in payload["tournament"]
     assert used_key == b"secret"
 

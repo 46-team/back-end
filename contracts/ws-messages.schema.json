@@ -39,6 +39,26 @@
       },
       "additionalProperties": true
     },
+    "tournamentDetail": {
+      "type": "object",
+      "required": ["_id", "title", "created_by", "status", "created_at", "participants"],
+      "properties": {
+        "_id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": ["string", "null"] },
+        "created_by": { "type": "string" },
+        "start_date": { "type": ["string", "null"] },
+        "end_date": { "type": ["string", "null"] },
+        "participants": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/publicUser" }
+        },
+        "status": { "type": "string", "const": "Draft" },
+        "created_at": { "type": "integer" },
+        "updated_at": { "type": "integer" }
+      },
+      "additionalProperties": true
+    },
     "standardErrorResponse": {
       "type": "object",
       "required": ["is_ok", "type", "error", "err_code"],
@@ -241,6 +261,28 @@
           "type": "array",
           "items": { "$ref": "#/$defs/tournament" }
         }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "GetTournamentRequest",
+      "type": "object",
+      "required": ["type", "device_token", "tournament_id"],
+      "properties": {
+        "type": { "const": "get_tournament" },
+        "device_token": { "type": "string" },
+        "tournament_id": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "GetTournamentSuccessResponse",
+      "type": "object",
+      "required": ["is_ok", "type", "tournament"],
+      "properties": {
+        "is_ok": { "type": "boolean", "const": true },
+        "type": { "const": "get_tournament" },
+        "tournament": { "$ref": "#/$defs/tournamentDetail" }
       },
       "additionalProperties": true
     },

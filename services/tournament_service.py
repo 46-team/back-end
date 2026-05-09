@@ -3,7 +3,7 @@ from datetime import datetime
 from bson import ObjectId
 from bson.errors import InvalidId
 from dispatchers.authentication.roles import has_role
-from dispatchers.utils.serializers import serialize_mongo_document
+from dispatchers.utils.serializers import serialize_mongo_document, serialize_public_user
 ALLOWED_STATUSES = {"Draft", "Registration", "Running", "Finished"}
 TOURNAMENT_PUBLIC_FIELDS = {
     "_id": 1,
@@ -16,6 +16,10 @@ TOURNAMENT_PUBLIC_FIELDS = {
     "created_at": 1,
     "updated_at": 1,
 }
+TOURNAMENT_DETAIL_FIELDS = {
+    **TOURNAMENT_PUBLIC_FIELDS,
+    "participant_ids": 1,
+}
 async def change_tournament_status(db, tournament_id: ObjectId, status: str) -> dict | None:
     await db["tournaments"].update_one(
         {"_id": tournament_id},
@@ -27,10 +31,20 @@ async def change_tournament_status(db, tournament_id: ObjectId, status: str) -> 
 ACTUAL_TOURNAMENT_FILTER = {"status": {"$ne": "Archived"}}
 
 async def get_tournament(db, tournament_id: ObjectId) -> dict | None:
-    doc = await db["tournaments"].find_one({"_id": tournament_id}, TOURNAMENT_PUBLIC_FIELDS)
+    doc = await db["tournaments"].find_one({"_id": tournament_id}, TOURNAMENT_DETAIL_FIELDS)
     if not doc:
         return None
-    return serialize_mongo_document(doc)
+
+    participant_ids = doc.pop("participant_ids", []) or []
+    participants = []
+    for participant_id in participant_ids:
+        participant = await db["users"].find_one({"_id": participant_id})
+        if participant:
+            participants.append(serialize_public_user(participant))
+
+    tournament = serialize_mongo_document(doc)
+    tournament["participants"] = participants
+    return tournament
 
 class TournamentService:
 
