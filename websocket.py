@@ -42,7 +42,8 @@ async def message_handler(websocket: WebSocket, message: str):
             message=message,
             USER_TOKENS=USER_TOKENS,
             proto=proto,
-            ENCRYPTION_KEYS=ENCRYPTION_KEYS
+            ENCRYPTION_KEYS=ENCRYPTION_KEYS,
+            save_tokens=save_tokens
         )
 
     elif message['type'] == "logout":

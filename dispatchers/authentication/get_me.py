@@ -1,9 +1,10 @@
 from fastapi import WebSocket
+from dispatchers.authentication.tokens import generate_device_token
 from dispatchers.utils.error_templates import err_invalid_token
 from dispatchers.utils.serializers import serialize_public_user
 
 
-async def get_me_handler(client: WebSocket, message: dict, USER_TOKENS: dict, proto, ENCRYPTION_KEYS):
+async def get_me_handler(client: WebSocket, message: dict, USER_TOKENS: dict, proto, ENCRYPTION_KEYS, save_tokens):
     token = message.get("device_token")
 
     if not token:
@@ -14,8 +15,11 @@ async def get_me_handler(client: WebSocket, message: dict, USER_TOKENS: dict, pr
         await err_invalid_token(proto, ENCRYPTION_KEYS, client, type="get_me")
         return
 
-    session = USER_TOKENS[token]
+    session = USER_TOKENS.pop(token)
     session[0] = client
+    new_token = generate_device_token()
+    USER_TOKENS[new_token] = session
+    await save_tokens()
 
     user = serialize_public_user(session[1])
 
@@ -23,6 +27,7 @@ async def get_me_handler(client: WebSocket, message: dict, USER_TOKENS: dict, pr
         {
             "is_ok": True,
             "type": "get_me",
+            "token": new_token,
             "user": user
         },
         ENCRYPTION_KEYS[client]['key']

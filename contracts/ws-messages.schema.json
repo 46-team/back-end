@@ -172,10 +172,11 @@
     {
       "title": "GetMeSuccessResponse",
       "type": "object",
-      "required": ["is_ok", "type", "user"],
+      "required": ["is_ok", "type", "token", "user"],
       "properties": {
         "is_ok": { "type": "boolean", "const": true },
         "type": { "const": "get_me" },
+        "token": { "type": "string" },
         "user": { "$ref": "#/$defs/publicUser" }
       },
       "additionalProperties": true

@@ -248,6 +248,7 @@ Successful response:
 {
   "is_ok": true,
   "type": "get_me",
+  "token": "new-device-token",
   "user": {
     "_id": "user-id",
     "email": "alice@example.com",
@@ -257,6 +258,8 @@ Successful response:
   }
 }
 ```
+
+The supplied `device_token` is rotated on success. Use the returned `token` for subsequent requests; the previous token is invalid after this response.
 
 Known errors:
 
