@@ -3,7 +3,7 @@ from datetime import datetime
 from bson import ObjectId
 from bson.errors import InvalidId
 from dispatchers.authentication.roles import has_role
-from dispatchers.utils.serializers import serialize_mongo_document
+from dispatchers.utils.serializers import serialize_mongo_document, serialize_public_user
 ALLOWED_STATUSES = {"Draft", "Registration", "Running", "Finished"}
 TOURNAMENT_PUBLIC_FIELDS = {
     "_id": 1,
@@ -16,21 +16,49 @@ TOURNAMENT_PUBLIC_FIELDS = {
     "created_at": 1,
     "updated_at": 1,
 }
-async def change_tournament_status(db, tournament_id: ObjectId, status: str) -> dict | None:
-    await db["tournaments"].update_one(
-        {"_id": tournament_id},
-        {"$set": {"status": status, "updated_at": int(time.time())}}
-    )
-    return await get_tournament(db, tournament_id)
+TOURNAMENT_DETAIL_FIELDS = {
+    **TOURNAMENT_PUBLIC_FIELDS,
+    "participant_ids": 1,
+}
+async def change_tournament_status(db, tournament_id: ObjectId, status: str, user=None) -> dict | None:
+    if user is None:
+        raise Exception("Access denied")
+
+    return await TournamentService.change_tournament_status(db, tournament_id, status, user)
 
 
 ACTUAL_TOURNAMENT_FILTER = {"status": {"$ne": "Archived"}}
 
+
+def _validate_tournament_dates(start_date, end_date):
+    if start_date is None or end_date is None:
+        return
+
+    try:
+        parsed_start = datetime.fromisoformat(start_date)
+        parsed_end = datetime.fromisoformat(end_date)
+    except (TypeError, ValueError):
+        raise Exception("Invalid tournament dates")
+
+    if parsed_start >= parsed_end:
+        raise Exception("Invalid tournament dates: 'start_date' must be earlier than 'end_date'")
+
+
 async def get_tournament(db, tournament_id: ObjectId) -> dict | None:
-    doc = await db["tournaments"].find_one({"_id": tournament_id}, TOURNAMENT_PUBLIC_FIELDS)
+    doc = await db["tournaments"].find_one({"_id": tournament_id}, TOURNAMENT_DETAIL_FIELDS)
     if not doc:
         return None
-    return serialize_mongo_document(doc)
+
+    participant_ids = doc.pop("participant_ids", []) or []
+    participants = []
+    for participant_id in participant_ids:
+        participant = await db["users"].find_one({"_id": participant_id})
+        if participant:
+            participants.append(serialize_public_user(participant))
+
+    tournament = serialize_mongo_document(doc)
+    tournament["participants"] = participants
+    return tournament
 
 class TournamentService:
 
@@ -42,6 +70,8 @@ class TournamentService:
 
         if "title" not in data:
             raise Exception("Invalid tournament data: 'title' is required")
+
+        _validate_tournament_dates(data.get("start_date"), data.get("end_date"))
 
         tournament = {
             "title": data["title"],
@@ -175,15 +205,7 @@ class TournamentService:
 
         start_date = updates.get("start_date", tournament.get("start_date"))
         end_date = updates.get("end_date", tournament.get("end_date"))
-        if start_date is not None and end_date is not None:
-            try:
-                parsed_start = datetime.fromisoformat(start_date)
-                parsed_end = datetime.fromisoformat(end_date)
-            except (TypeError, ValueError):
-                raise Exception("Invalid tournament dates")
-
-            if parsed_start >= parsed_end:
-                raise Exception("Invalid tournament dates: 'start_date' must be earlier than 'end_date'")
+        _validate_tournament_dates(start_date, end_date)
 
         updates["updated_at"] = int(time.time())
 
@@ -194,3 +216,34 @@ class TournamentService:
 
         tournament.update(updates)
         return serialize_mongo_document(tournament)
+
+    @staticmethod
+    async def change_tournament_status(db, tournament_id, status, user):
+        if not has_role(user, "organizer"):
+            raise Exception("Access denied")
+
+        if not tournament_id or not status:
+            raise Exception("Required data is missing")
+
+        if status not in ALLOWED_STATUSES:
+            raise Exception(f"Invalid status. Allowed values: {', '.join(sorted(ALLOWED_STATUSES))}.")
+
+        try:
+            tournament_object_id = ObjectId(tournament_id)
+        except (InvalidId, TypeError):
+            raise Exception("Invalid tournament_id")
+
+        tournament = await db["tournaments"].find_one({"_id": tournament_object_id})
+        if not tournament:
+            raise Exception("Tournament not found")
+
+        if tournament.get("created_by") != user["_id"]:
+            raise Exception("Access denied")
+
+        updated_at = int(time.time())
+        await db["tournaments"].update_one(
+            {"_id": tournament_object_id},
+            {"$set": {"status": status, "updated_at": updated_at}}
+        )
+
+        return await get_tournament(db, tournament_object_id)

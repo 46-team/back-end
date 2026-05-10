@@ -1,15 +1,50 @@
+from typing import TYPE_CHECKING, Any
+
 from fastapi import WebSocket
-from bson import ObjectId
-from bson.errors import InvalidId
-import dispatchers.utils.FGProto as FGProto
-from dispatchers.utils.error_templates import (
-    err_empty_token,
-    err_invalid_token,
-    err_incompl_request,
-    err_invalid_id,
-    err_not_found,
-)
-from services.tournament_service import change_tournament_status as service_change_status, ALLOWED_STATUSES
+from services.tournament_service import TournamentService
+
+if TYPE_CHECKING:
+    import dispatchers.utils.FGProto as FGProto
+else:
+    FGProto = Any
+
+
+MESSAGE_TYPE = "change_tournament_status"
+
+
+ERRORS = {
+    "Access denied": ("You do not have permission to perform this action.", "FORBIDDEN"),
+    "Required data is missing": (
+        "Required data is missing. Please check your request and try again.",
+        "INCOMPLETE_REQUEST",
+    ),
+    "Invalid tournament_id": (
+        "Invalid ID provided. Please check your request and try again.",
+        "INVALID_ID",
+    ),
+    "Tournament not found": ("The requested resource was not found.", "NOT_FOUND"),
+}
+
+
+async def send_change_status_error(client, proto, ENCRYPTION_KEYS, message, error_code):
+    await proto.send_message(
+        {
+            "is_ok": False,
+            "type": MESSAGE_TYPE,
+            "error": message,
+            "err_code": f"#{error_code}",
+        },
+        ENCRYPTION_KEYS[client]["key"],
+        client_usr=client,
+    )
+
+
+def map_change_status_error(error):
+    message = str(error)
+    if message.startswith("Invalid status."):
+        return message, "INVALID_STATUS"
+
+    return ERRORS.get(message, (message, "BAD_REQUEST"))
 
 
 async def change_tournament_status(
@@ -20,83 +55,72 @@ async def change_tournament_status(
     proto: FGProto, 
     ENCRYPTION_KEYS: dict
 ) -> None:
-    
+
     if not isinstance(message.get("device_token"), str):
-        await err_empty_token(
-            proto=proto, 
-            ENCRYPTION_KEYS=ENCRYPTION_KEYS, 
-            client=client
-            )
+        await send_change_status_error(
+            client,
+            proto,
+            ENCRYPTION_KEYS,
+            "Authorization token is missing. Please try again later.",
+            "AUTH_TOKEN_EMPTY",
+        )
         return
 
     if not (message["device_token"] in USER_TOKENS and USER_TOKENS[message["device_token"]][0] == client):
-        await err_invalid_token(
-            proto=proto, 
-            ENCRYPTION_KEYS=ENCRYPTION_KEYS, 
-            client=client, 
-            type="change_tournament_status"
-            )
+        await send_change_status_error(
+            client,
+            proto,
+            ENCRYPTION_KEYS,
+            "Unable to establish a secure connection. Please try again later.",
+            "INSECURE_CONNECTION",
+        )
         return
 
-   
     if not message.get("tournament_id") or not message.get("status"):
-        await err_incompl_request(
-            proto=proto, 
-            ENCRYPTION_KEYS=ENCRYPTION_KEYS, 
-            client=client
-            )
-        return
-
-    if message["status"] not in ALLOWED_STATUSES:
-        proto.Error(
-            proto=proto,
-            message=f"Invalid status. Allowed values: {', '.join(ALLOWED_STATUSES)}.",
-            enc_key=ENCRYPTION_KEYS[client]["key"],
-            error_code="INVALID_STATUS",
-            client=client,
-            type="change_tournament_status"
+        await send_change_status_error(
+            client,
+            proto,
+            ENCRYPTION_KEYS,
+            "Required data is missing. Please check your request and try again.",
+            "INCOMPLETE_REQUEST",
         )
         return
 
     user = USER_TOKENS[message["device_token"]][1]
     db_user = await db["users"].find_one({"_id": user["_id"]}, {"role": 1})
 
-    if not db_user or db_user.get("role") != "organizer": 
-        proto.Error(
-            proto=proto,
-            message="You do not have permission to perform this action.",
-            enc_key=ENCRYPTION_KEYS[client]["key"],
-            error_code="FORBIDDEN",
-            client=client,
-            type="change_tournament_status"
+    if not db_user or db_user.get("role") != "organizer":
+        await send_change_status_error(
+            client,
+            proto,
+            ENCRYPTION_KEYS,
+            "You do not have permission to perform this action.",
+            "FORBIDDEN",
         )
         return
 
     try:
-        oid = ObjectId(message["tournament_id"])
-    except (InvalidId, TypeError):
-        await err_invalid_id(
-            proto=proto, 
-            ENCRYPTION_KEYS=ENCRYPTION_KEYS, 
-            client=client, 
-            type="change_tournament_status"
-            )
-        return
-
-    tournament = await service_change_status(db, oid, message["status"])
-
-    if not tournament:
-        await err_not_found(
-            proto=proto, 
-            ENCRYPTION_KEYS=ENCRYPTION_KEYS, 
-            client=client, 
-            type="change_tournament_status"
-            )
+        service_user = {**user, "role": db_user["role"]}
+        tournament = await TournamentService.change_tournament_status(
+            db=db,
+            tournament_id=message["tournament_id"],
+            status=message["status"],
+            user=service_user,
+        )
+    except Exception as error:
+        error_message, error_code = map_change_status_error(error)
+        await send_change_status_error(
+            client,
+            proto,
+            ENCRYPTION_KEYS,
+            error_message,
+            error_code,
+        )
         return
 
     await proto.send_message(
         {"is_ok": True, 
-         "type": "change_tournament_status", 
+         "type": MESSAGE_TYPE, 
          "tournament": tournament
          },
         ENCRYPTION_KEYS[client]["key"],

@@ -102,14 +102,20 @@ Tournament objects currently use this shape:
   "start_date": "string | null",
   "end_date": "string | null",
   "participant_ids": ["string"],
-  "status": "Draft",
+  "status": "Draft | Registration | Running | Finished",
   "created_at": 1710000000,
   "updated_at": 1710000100
 }
 ```
 
-`created_at` and `updated_at` are Unix timestamps in seconds. `updated_at`
-is present after a tournament has been updated.
+Allowed tournament statuses are `Draft`, `Registration`, `Running`, and
+`Finished`. `created_at` and `updated_at` are Unix timestamps in seconds.
+`updated_at` is present after a tournament has been updated.
+
+Tournament detail responses use `participants` instead of `participant_ids`.
+`participants` is always present, is never `null`, and contains public user
+objects. If a stored participant id no longer points to an existing user, that
+user is omitted from `participants`.
 
 ## Supported Messages
 
@@ -411,6 +417,77 @@ Possible error messages include:
 - `Invalid tournament dates`
 - `Invalid tournament dates: 'start_date' must be earlier than 'end_date'`
 
+### change_tournament_status
+
+Changes a tournament status. The authenticated user must have the `organizer`
+role and must be the tournament creator.
+
+Request:
+
+```json
+{
+  "type": "change_tournament_status",
+  "device_token": "device-token",
+  "tournament_id": "tournament-id",
+  "status": "Registration"
+}
+```
+
+Required fields:
+
+- `device_token`
+- `tournament_id`
+- `status`
+
+Allowed `status` values:
+
+- `Draft`
+- `Registration`
+- `Running`
+- `Finished`
+
+Successful response:
+
+```json
+{
+  "is_ok": true,
+  "type": "change_tournament_status",
+  "tournament": {
+    "_id": "tournament-id",
+    "title": "Spring Cup",
+    "description": "Test event",
+    "created_by": "user-id",
+    "start_date": "2026-05-01",
+    "end_date": "2026-05-03",
+    "participants": [],
+    "status": "Registration",
+    "created_at": 1710000000,
+    "updated_at": 1710000100
+  }
+}
+```
+
+Current standard errors:
+
+```json
+{
+  "is_ok": false,
+  "type": "change_tournament_status",
+  "error": "The requested resource was not found.",
+  "err_code": "#NOT_FOUND"
+}
+```
+
+Possible error codes include:
+
+- `#AUTH_TOKEN_EMPTY`
+- `#INSECURE_CONNECTION`
+- `#INCOMPLETE_REQUEST`
+- `#FORBIDDEN`
+- `#INVALID_ID`
+- `#INVALID_STATUS`
+- `#NOT_FOUND`
+
 ### get_tournaments
 
 Returns all tournaments.
@@ -457,6 +534,66 @@ Current inline errors:
   "is_ok": false,
   "type": "get_tournaments",
   "error": "Invalid token"
+}
+```
+
+### get_tournament
+
+Returns a single tournament with resolved public participant information.
+
+Request:
+
+```json
+{
+  "type": "get_tournament",
+  "device_token": "device-token",
+  "tournament_id": "tournament-id"
+}
+```
+
+Required fields:
+
+- `device_token`
+- `tournament_id`
+
+Successful response:
+
+```json
+{
+  "is_ok": true,
+  "type": "get_tournament",
+  "tournament": {
+    "_id": "tournament-id",
+    "title": "Spring Cup",
+    "description": "Test event",
+    "created_by": "user-id",
+    "start_date": "2026-05-01",
+    "end_date": "2026-05-03",
+    "participants": [
+      {
+        "_id": "participant-user-id",
+        "email": "participant@example.com",
+        "full_name": "Participant User",
+        "login": "participant",
+        "role": "team"
+      }
+    ],
+    "status": "Draft",
+    "created_at": 1710000000
+  }
+}
+```
+
+When no assigned participants can be resolved, `participants` is returned as
+`[]`.
+
+Current inline errors:
+
+```json
+{
+  "is_ok": false,
+  "type": "get_tournament",
+  "error": "Tournament not found"
 }
 ```
 
