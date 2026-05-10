@@ -14,7 +14,7 @@ else:
 
 async def server_auth(client:WebSocket, message:dict, db:any, USER_TOKENS:dict, proto:FGProto, ENCRYPTION_KEYS:dict, save_tokens:any) -> None:
     email = message.get('email', '').strip().lower()
-    login = (message.get('login') or message.get('username') or '').strip()
+    login = (message.get('login') or message.get('username') or '').strip().lower()
     if not email and not login:
         await err_incorrect_login(proto=proto, ENCRYPTION_KEYS=ENCRYPTION_KEYS, client=client)
         return

@@ -34,7 +34,7 @@ async def server_register(
         await err_incompl_request(proto=proto, ENCRYPTION_KEYS=ENCRYPTION_KEYS, client=client)
         return
 
-    login = message['login'].strip()
+    login = message['login'].strip().lower()
     email = message.get('email', '').strip().lower()
     full_name = message.get('full_name', '').strip()
 
