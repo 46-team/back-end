@@ -1,8 +1,7 @@
-import hashlib
-import uuid
 from typing import TYPE_CHECKING, Any
 from fastapi import WebSocket
 from dispatchers.authentication.roles import normalize_user_role
+from dispatchers.authentication.tokens import generate_device_token
 from dispatchers.utils.error_templates import err_incorrect_login
 from dispatchers.utils.serializers import serialize_public_user
 
@@ -45,7 +44,7 @@ async def server_auth_found_user(db:any, USER_TOKENS:dict, client:WebSocket, use
     normalized_role = normalize_user_role(user)
     if normalized_role and stored_role != normalized_role:
         await db['users'].update_one({"_id": user["_id"]}, {"$set": {"role": normalized_role}})
-    token = hashlib.sha256(uuid.uuid4().hex.encode('utf-8')).hexdigest()
+    token = generate_device_token()
     USER_TOKENS[token] = [client, user, False, "login", {"is_frozen": False, "is_online": True, "last_seen": None, "login_at": None}]
     await save_tokens()
     userr = serialize_public_user(user)

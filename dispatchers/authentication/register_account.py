@@ -1,7 +1,6 @@
-import hashlib
-import uuid
 from typing import TYPE_CHECKING, Any
 from fastapi import WebSocket
+from dispatchers.authentication.tokens import generate_device_token
 from dispatchers.utils.error_templates import (
     err_user_already_exists,
     err_incompl_request,
@@ -97,7 +96,7 @@ async def server_register_create_user(
     user_doc['_id'] = result.inserted_id
     normalize_user_role(user_doc)
 
-    token = hashlib.sha256(uuid.uuid4().hex.encode('utf-8')).hexdigest()
+    token = generate_device_token()
     USER_TOKENS[token] = [
         client,
         user_doc,
