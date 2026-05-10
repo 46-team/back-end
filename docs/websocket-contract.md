@@ -121,7 +121,7 @@ user is omitted from `participants`.
 
 ### auth
 
-Authenticates an existing user by email and password.
+Authenticates an existing user by email or login and password.
 
 Request:
 
@@ -132,6 +132,18 @@ Request:
   "password": "secret123"
 }
 ```
+
+The request may send `login` instead of `email`. If the client uses a single identifier field, `email` may also contain the login value.
+
+```json
+{
+  "type": "auth",
+  "login": "alice",
+  "password": "secret123"
+}
+```
+
+`username` is also accepted as a compatibility alias for `login`.
 
 Successful response:
 
@@ -186,6 +198,7 @@ Validation:
 
 - `login` must contain at least 3 characters after trimming.
 - `password` must contain at least 6 characters.
+- `email`, when provided, must be a valid email address.
 - `login` and `email` must be unique.
 
 Successful response:
@@ -235,6 +248,7 @@ Successful response:
 {
   "is_ok": true,
   "type": "get_me",
+  "token": "new-device-token",
   "user": {
     "_id": "user-id",
     "email": "alice@example.com",
@@ -244,6 +258,8 @@ Successful response:
   }
 }
 ```
+
+The supplied `device_token` is rotated on success. Use the returned `token` for subsequent requests; the previous token is invalid after this response.
 
 Known errors:
 
