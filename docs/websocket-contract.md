@@ -121,7 +121,7 @@ user is omitted from `participants`.
 
 ### auth
 
-Authenticates an existing user by email and password.
+Authenticates an existing user by email or login and password.
 
 Request:
 
@@ -129,6 +129,16 @@ Request:
 {
   "type": "auth",
   "email": "alice@example.com",
+  "password": "secret123"
+}
+```
+
+The request may send `login` instead of `email`:
+
+```json
+{
+  "type": "auth",
+  "login": "alice",
   "password": "secret123"
 }
 ```
@@ -186,6 +196,7 @@ Validation:
 
 - `login` must contain at least 3 characters after trimming.
 - `password` must contain at least 6 characters.
+- `email`, when provided, must be a valid email address.
 - `login` and `email` must be unique.
 
 Successful response:

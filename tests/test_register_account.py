@@ -30,6 +30,33 @@ async def test_register_rejects_short_password(client, encryption_keys, proto):
     assert payload["error"] == "Password must contain at least 6 characters."
 
 
+async def test_register_rejects_invalid_email_format(client, encryption_keys, proto):
+    users_collection = type("UsersCollection", (), {"find_one": AsyncMock()})()
+    db = {"users": users_collection}
+
+    await server_register(
+        client=client,
+        message={
+            "login": "alice",
+            "password": "123456",
+            "full_name": "Alice Example",
+            "email": "lol",
+        },
+        db=db,
+        USER_TOKENS={},
+        proto=proto,
+        ENCRYPTION_KEYS=encryption_keys,
+        save_tokens=AsyncMock(),
+    )
+
+    await asyncio.sleep(0)
+    users_collection.find_one.assert_not_awaited()
+    payload, _ = proto.send_message.await_args.args
+    assert payload["is_ok"] is False
+    assert payload["error"] == "Invalid email format."
+    assert payload["err_code"] == "#INVALID_EMAIL"
+
+
 async def test_register_creates_user_with_default_role(client, encryption_keys, proto):
     users_collection = type("UsersCollection", (), {})()
     users_collection.find_one = AsyncMock(return_value=None)

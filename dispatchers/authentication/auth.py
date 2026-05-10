@@ -14,12 +14,21 @@ else:
 
 async def server_auth(client:WebSocket, message:dict, db:any, USER_TOKENS:dict, proto:FGProto, ENCRYPTION_KEYS:dict, save_tokens:any) -> None:
     email = message.get('email', '').strip()
-    if not email:
+    login = message.get('login', '').strip()
+    if not email and not login:
         await err_incorrect_login(proto=proto, ENCRYPTION_KEYS=ENCRYPTION_KEYS, client=client)
         return
 
     message['email'] = email
-    user = await db['users'].find_one({"email": email})
+    message['login'] = login
+    if email and login:
+        user_query = {"$or": [{"email": email}, {"login": login}]}
+    elif email:
+        user_query = {"email": email}
+    else:
+        user_query = {"login": login}
+
+    user = await db['users'].find_one(user_query)
     if user:
         await server_auth_found_user(db, USER_TOKENS, client, user, proto, ENCRYPTION_KEYS, save_tokens, message)
     else:

@@ -150,6 +150,15 @@ async def err_invalid_password(proto: FGProto, ENCRYPTION_KEYS: dict, client: We
     )
 
 
+async def err_invalid_email(proto: FGProto, ENCRYPTION_KEYS: dict, client: WebSocket) -> None:
+    proto.Error(
+        proto,
+        "Invalid email format.",
+        ENCRYPTION_KEYS[client]['key'],
+        "INVALID_EMAIL"
+    )
+
+
 async def err_invalid_id(proto: FGProto, ENCRYPTION_KEYS: dict, client: WebSocket, type="null") -> None:
     proto.Error(
         proto=proto,

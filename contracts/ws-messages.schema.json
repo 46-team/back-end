@@ -105,10 +105,15 @@
     {
       "title": "AuthRequest",
       "type": "object",
-      "required": ["type", "email", "password"],
+      "required": ["type", "password"],
+      "anyOf": [
+        { "required": ["email"] },
+        { "required": ["login"] }
+      ],
       "properties": {
         "type": { "const": "auth" },
-        "email": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "login": { "type": "string" },
         "password": { "type": "string" }
       },
       "additionalProperties": true
@@ -135,7 +140,7 @@
         "login": { "type": "string", "minLength": 3 },
         "password": { "type": "string", "minLength": 6 },
         "full_name": { "type": "string" },
-        "email": { "type": "string" }
+        "email": { "type": "string", "format": "email" }
       },
       "additionalProperties": true
     },
