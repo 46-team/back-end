@@ -38,6 +38,7 @@ older errors currently use `"null"`.
 | `#INCORRECT_LOGIN` | `Invalid login credentials. Please try again.` |
 | `#USER_ALREADY_EXISTS` | `User with this login or email already exists.` |
 | `#INVALID_PASSWORD` | `Password must contain at least 6 characters.` |
+| `#INVALID_LOGIN` | `Login must be 3-30 characters and may contain only Latin letters, digits, '.', '_', and '-'. It must start and end with a letter or digit.` |
 | `#INVALID_EMAIL` | `Invalid email format.` |
 
 ## Current Inline Errors
