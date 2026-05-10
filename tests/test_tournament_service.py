@@ -107,10 +107,40 @@ class FakeUsersCollection:
         }
 
 
+class FakeSubmissionCollection:
+    def __init__(self, documents=None):
+        self.insert_one_calls = []
+        self.update_one_calls = []
+        self.documents = documents or {}
+
+    async def find_one(self, query, projection=None):
+        if "_id" in query:
+            return self.documents.get(query["_id"])
+
+        for document in self.documents.values():
+            if all(document.get(key) == value for key, value in query.items()):
+                return document
+
+        return None
+
+    async def insert_one(self, document):
+        self.insert_one_calls.append(document)
+        inserted_id = ObjectId()
+        self.documents[inserted_id] = document
+        return type("InsertResult", (), {"inserted_id": inserted_id})()
+
+    async def update_one(self, query, update):
+        self.update_one_calls.append((query, update))
+        document = await self.find_one(query)
+        if document:
+            document.update(update.get("$set", {}))
+
+
 class FakeDb:
-    def __init__(self, tournaments=None, users=None):
+    def __init__(self, tournaments=None, users=None, tournament_submissions=None):
         self.tournaments = tournaments or FakeTournamentCollection()
         self.users = users or FakeUsersCollection()
+        self.tournament_submissions = tournament_submissions or FakeSubmissionCollection()
 
     def __getitem__(self, name):
         if name == "tournaments":
@@ -118,6 +148,9 @@ class FakeDb:
 
         if name == "users":
             return self.users
+
+        if name == "tournament_submissions":
+            return self.tournament_submissions
 
         raise KeyError(name)
 
@@ -378,6 +411,206 @@ async def test_create_tournament_requires_title():
             data={},
             user={"_id": ObjectId(), "role": "organizer"},
         )
+
+
+@pytest.mark.asyncio
+async def test_upsert_submission_creates_submission_and_sends_email():
+    tournament_id = ObjectId()
+    organizer_id = ObjectId()
+    team_id = ObjectId()
+    email_calls = []
+    db = FakeDb(
+        tournaments=FakeTournamentCollection(
+            {
+                tournament_id: {
+                    "_id": tournament_id,
+                    "title": "Spring Cup",
+                    "created_by": organizer_id,
+                    "participant_ids": [team_id],
+                }
+            }
+        ),
+        users=FakeUsersCollection(
+            {
+                organizer_id: {
+                    "_id": organizer_id,
+                    "email": "organizer@example.com",
+                    "role": "organizer",
+                }
+            }
+        ),
+    )
+
+    async def email_sender(**kwargs):
+        email_calls.append(kwargs)
+
+    result = await TournamentService.upsert_submission(
+        db=db,
+        data={
+            "tournament_id": str(tournament_id),
+            "repository_url": "https://github.com/team/project",
+            "video_demo_url": "https://video.example/demo",
+            "live_demo_url": "https://demo.example",
+            "description": "Ready for review",
+        },
+        user={
+            "_id": team_id,
+            "role": "team",
+            "email": "team@example.com",
+            "full_name": "Team Rocket",
+        },
+        email_sender=email_sender,
+    )
+
+    submission = result["submission"]
+    assert result["email_sent"] is True
+    assert submission["tournament_id"] == str(tournament_id)
+    assert submission["team_id"] == str(team_id)
+    assert submission["repository_url"] == "https://github.com/team/project"
+    assert submission["video_demo_url"] == "https://video.example/demo"
+    assert submission["live_demo_url"] == "https://demo.example"
+    assert submission["description"] == "Ready for review"
+    assert db.tournament_submissions.insert_one_calls
+    assert email_calls[0]["tournament"]["title"] == "Spring Cup"
+    assert email_calls[0]["organizer"]["email"] == "organizer@example.com"
+
+
+@pytest.mark.asyncio
+async def test_upsert_submission_updates_existing_submission():
+    tournament_id = ObjectId()
+    team_id = ObjectId()
+    submission_id = ObjectId()
+    existing_submission = {
+        "_id": submission_id,
+        "tournament_id": tournament_id,
+        "team_id": team_id,
+        "repository_url": "https://github.com/team/old",
+        "video_demo_url": "https://video.example/old",
+        "created_at": 1710000000,
+        "updated_at": 1710000000,
+        "submitted_at": 1710000000,
+    }
+    db = FakeDb(
+        tournaments=FakeTournamentCollection(
+            {
+                tournament_id: {
+                    "_id": tournament_id,
+                    "title": "Spring Cup",
+                    "created_by": ObjectId(),
+                    "participant_ids": [team_id],
+                }
+            }
+        ),
+        tournament_submissions=FakeSubmissionCollection({submission_id: existing_submission}),
+    )
+
+    result = await TournamentService.upsert_submission(
+        db=db,
+        data={
+            "tournament_id": str(tournament_id),
+            "repository_url": "https://github.com/team/new",
+            "video_demo_url": "https://video.example/new",
+        },
+        user={"_id": team_id, "role": "team"},
+    )
+
+    assert result["email_sent"] is False
+    assert result["submission"]["_id"] == str(submission_id)
+    assert result["submission"]["repository_url"] == "https://github.com/team/new"
+    assert result["submission"]["video_demo_url"] == "https://video.example/new"
+    assert result["submission"]["created_at"] == 1710000000
+    assert db.tournament_submissions.insert_one_calls == []
+    assert db.tournament_submissions.update_one_calls
+
+
+@pytest.mark.asyncio
+async def test_upsert_submission_requires_team_role():
+    with pytest.raises(Exception, match="Access denied"):
+        await TournamentService.upsert_submission(
+            db=FakeDb(),
+            data={
+                "tournament_id": str(ObjectId()),
+                "repository_url": "https://github.com/team/project",
+                "video_demo_url": "https://video.example/demo",
+            },
+            user={"_id": ObjectId(), "role": "organizer"},
+        )
+
+
+@pytest.mark.asyncio
+async def test_upsert_submission_requires_required_fields():
+    with pytest.raises(Exception, match="Required data is missing"):
+        await TournamentService.upsert_submission(
+            db=FakeDb(),
+            data={"tournament_id": str(ObjectId()), "repository_url": "https://github.com/team/project"},
+            user={"_id": ObjectId(), "role": "team"},
+        )
+
+
+@pytest.mark.asyncio
+async def test_upsert_submission_requires_assigned_team():
+    tournament_id = ObjectId()
+    db = FakeDb(
+        tournaments=FakeTournamentCollection(
+            {
+                tournament_id: {
+                    "_id": tournament_id,
+                    "title": "Spring Cup",
+                    "created_by": ObjectId(),
+                    "participant_ids": [ObjectId()],
+                }
+            }
+        )
+    )
+
+    with pytest.raises(Exception, match="Access denied"):
+        await TournamentService.upsert_submission(
+            db=db,
+            data={
+                "tournament_id": str(tournament_id),
+                "repository_url": "https://github.com/team/project",
+                "video_demo_url": "https://video.example/demo",
+            },
+            user={"_id": ObjectId(), "role": "team"},
+        )
+
+
+@pytest.mark.asyncio
+async def test_upsert_submission_succeeds_when_email_fails(caplog):
+    tournament_id = ObjectId()
+    organizer_id = ObjectId()
+    team_id = ObjectId()
+    db = FakeDb(
+        tournaments=FakeTournamentCollection(
+            {
+                tournament_id: {
+                    "_id": tournament_id,
+                    "title": "Spring Cup",
+                    "created_by": organizer_id,
+                    "participant_ids": [team_id],
+                }
+            }
+        ),
+        users=FakeUsersCollection({organizer_id: {"_id": organizer_id, "email": "organizer@example.com"}}),
+    )
+
+    async def email_sender(**kwargs):
+        raise RuntimeError("SMTP unavailable")
+
+    result = await TournamentService.upsert_submission(
+        db=db,
+        data={
+            "tournament_id": str(tournament_id),
+            "repository_url": "https://github.com/team/project",
+            "video_demo_url": "https://video.example/demo",
+        },
+        user={"_id": team_id, "role": "team"},
+        email_sender=email_sender,
+    )
+
+    assert result["email_sent"] is False
+    assert result["submission"]["repository_url"] == "https://github.com/team/project"
+    assert "Failed to send tournament submission notification" in caplog.text
 
 
 @pytest.mark.asyncio
