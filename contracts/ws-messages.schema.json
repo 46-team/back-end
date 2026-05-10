@@ -8,6 +8,10 @@
       "type": "string",
       "enum": ["admin", "team", "jury", "organizer"]
     },
+    "tournamentStatus": {
+      "type": "string",
+      "enum": ["Draft", "Registration", "Running", "Finished"]
+    },
     "publicUser": {
       "type": "object",
       "properties": {
@@ -33,7 +37,7 @@
           "type": "array",
           "items": { "type": "string" }
         },
-        "status": { "type": "string", "const": "Draft" },
+        "status": { "$ref": "#/$defs/tournamentStatus" },
         "created_at": { "type": "integer" },
         "updated_at": { "type": "integer" }
       },
@@ -53,7 +57,7 @@
           "type": "array",
           "items": { "$ref": "#/$defs/publicUser" }
         },
-        "status": { "type": "string", "const": "Draft" },
+        "status": { "$ref": "#/$defs/tournamentStatus" },
         "created_at": { "type": "integer" },
         "updated_at": { "type": "integer" }
       },
@@ -237,6 +241,29 @@
         "is_ok": { "type": "boolean", "const": true },
         "type": { "const": "update_tournament" },
         "tournament": { "$ref": "#/$defs/tournament" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "ChangeTournamentStatusRequest",
+      "type": "object",
+      "required": ["type", "device_token", "tournament_id", "status"],
+      "properties": {
+        "type": { "const": "change_tournament_status" },
+        "device_token": { "type": "string" },
+        "tournament_id": { "type": "string" },
+        "status": { "$ref": "#/$defs/tournamentStatus" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "ChangeTournamentStatusSuccessResponse",
+      "type": "object",
+      "required": ["is_ok", "type", "tournament"],
+      "properties": {
+        "is_ok": { "type": "boolean", "const": true },
+        "type": { "const": "change_tournament_status" },
+        "tournament": { "$ref": "#/$defs/tournamentDetail" }
       },
       "additionalProperties": true
     },
