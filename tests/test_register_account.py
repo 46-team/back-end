@@ -88,3 +88,34 @@ async def test_register_creates_user_with_default_role(client, encryption_keys, 
     assert payload["is_ok"] is True
     assert payload["type"] == "register_account"
     assert payload["auth_mode"] == "register"
+
+
+async def test_register_normalizes_email_to_lowercase(client, encryption_keys, proto):
+    users_collection = type("UsersCollection", (), {})()
+    users_collection.find_one = AsyncMock(return_value=None)
+    users_collection.insert_one = AsyncMock(return_value=type("InsertResult", (), {"inserted_id": ObjectId()})())
+    db = {"users": users_collection}
+
+    await server_register(
+        client=client,
+        message={
+            "login": "alice",
+            "password": "123456",
+            "full_name": "Alice Example",
+            "email": " Alice@Example.COM ",
+        },
+        db=db,
+        USER_TOKENS={},
+        proto=proto,
+        ENCRYPTION_KEYS=encryption_keys,
+        save_tokens=AsyncMock(),
+    )
+
+    users_collection.find_one.assert_awaited_once_with({
+        "$or": [
+            {"login": "alice"},
+            {"email": "alice@example.com"},
+        ]
+    })
+    inserted_user = users_collection.insert_one.await_args.args[0]
+    assert inserted_user["email"] == "alice@example.com"

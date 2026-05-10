@@ -133,7 +133,7 @@ Request:
 }
 ```
 
-The request may send `login` instead of `email`:
+The request may send `login` instead of `email`. If the client uses a single identifier field, `email` may also contain the login value.
 
 ```json
 {
@@ -142,6 +142,8 @@ The request may send `login` instead of `email`:
   "password": "secret123"
 }
 ```
+
+`username` is also accepted as a compatibility alias for `login`.
 
 Successful response:
 

@@ -35,7 +35,7 @@ async def server_register(
         return
 
     login = message['login'].strip()
-    email = message.get('email', '').strip()
+    email = message.get('email', '').strip().lower()
     full_name = message.get('full_name', '').strip()
 
     if len(login) < 3:

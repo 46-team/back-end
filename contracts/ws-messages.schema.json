@@ -108,12 +108,14 @@
       "required": ["type", "password"],
       "anyOf": [
         { "required": ["email"] },
-        { "required": ["login"] }
+        { "required": ["login"] },
+        { "required": ["username"] }
       ],
       "properties": {
         "type": { "const": "auth" },
         "email": { "type": "string", "format": "email" },
         "login": { "type": "string" },
+        "username": { "type": "string" },
         "password": { "type": "string" }
       },
       "additionalProperties": true
