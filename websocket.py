@@ -135,6 +135,17 @@ async def message_handler(websocket: WebSocket, message: str):
             proto=proto,
             ENCRYPTION_KEYS=ENCRYPTION_KEYS
         )
+    elif message['type'] == "upsert_tournament_submission":
+        from dispatchers.tournaments.upsert_submission import upsert_tournament_submission_handler
+
+        await upsert_tournament_submission_handler(
+            client=websocket,
+            message=message,
+            db=db,
+            USER_TOKENS=USER_TOKENS,
+            proto=proto,
+            ENCRYPTION_KEYS=ENCRYPTION_KEYS
+        )
     elif message['type'] == "register_account":
         from dispatchers.authentication.register_account import server_register
 

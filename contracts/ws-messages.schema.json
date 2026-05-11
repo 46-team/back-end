@@ -63,6 +63,32 @@
       },
       "additionalProperties": true
     },
+    "tournamentSubmission": {
+      "type": "object",
+      "required": [
+        "_id",
+        "tournament_id",
+        "team_id",
+        "repository_url",
+        "video_demo_url",
+        "created_at",
+        "updated_at",
+        "submitted_at"
+      ],
+      "properties": {
+        "_id": { "type": "string" },
+        "tournament_id": { "type": "string" },
+        "team_id": { "type": "string" },
+        "repository_url": { "type": "string" },
+        "video_demo_url": { "type": "string" },
+        "live_demo_url": { "type": ["string", "null"] },
+        "description": { "type": ["string", "null"] },
+        "created_at": { "type": "integer" },
+        "updated_at": { "type": "integer" },
+        "submitted_at": { "type": "integer" }
+      },
+      "additionalProperties": true
+    },
     "standardErrorResponse": {
       "type": "object",
       "required": ["is_ok", "type", "error", "err_code"],
@@ -368,6 +394,33 @@
         "is_ok": { "type": "boolean", "const": true },
         "type": { "const": "assign_tournament_participants" },
         "tournament": { "$ref": "#/$defs/tournament" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "UpsertTournamentSubmissionRequest",
+      "type": "object",
+      "required": ["type", "device_token", "tournament_id", "repository_url", "video_demo_url"],
+      "properties": {
+        "type": { "const": "upsert_tournament_submission" },
+        "device_token": { "type": "string" },
+        "tournament_id": { "type": "string" },
+        "repository_url": { "type": "string" },
+        "video_demo_url": { "type": "string" },
+        "live_demo_url": { "type": ["string", "null"] },
+        "description": { "type": ["string", "null"] }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "UpsertTournamentSubmissionSuccessResponse",
+      "type": "object",
+      "required": ["is_ok", "type", "submission", "email_sent"],
+      "properties": {
+        "is_ok": { "type": "boolean", "const": true },
+        "type": { "const": "upsert_tournament_submission" },
+        "submission": { "$ref": "#/$defs/tournamentSubmission" },
+        "email_sent": { "type": "boolean" }
       },
       "additionalProperties": true
     },

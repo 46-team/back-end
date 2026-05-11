@@ -727,6 +727,85 @@ Possible error messages include:
 - `Invalid user_id`
 - `User not found`
 
+### upsert_tournament_submission
+
+Creates or updates the authenticated team's submission for a tournament. The
+authenticated user must have the `team` role and must be assigned to the
+tournament.
+
+Submissions are stored in the `tournament_submissions` MongoDB collection. The
+backend treats `tournament_id` plus `team_id` as the unique submission identity.
+
+Request:
+
+```json
+{
+  "type": "upsert_tournament_submission",
+  "device_token": "device-token",
+  "tournament_id": "tournament-id",
+  "repository_url": "https://github.com/team/project",
+  "video_demo_url": "https://video.example/demo",
+  "live_demo_url": "https://demo.example",
+  "description": "Optional notes for the organizer"
+}
+```
+
+Required fields:
+
+- `device_token`
+- `tournament_id`
+- `repository_url`
+- `video_demo_url`
+
+Optional fields:
+
+- `live_demo_url`
+- `description`
+
+Successful response:
+
+```json
+{
+  "is_ok": true,
+  "type": "upsert_tournament_submission",
+  "submission": {
+    "_id": "submission-id",
+    "tournament_id": "tournament-id",
+    "team_id": "team-user-id",
+    "repository_url": "https://github.com/team/project",
+    "video_demo_url": "https://video.example/demo",
+    "live_demo_url": "https://demo.example",
+    "description": "Optional notes for the organizer",
+    "created_at": 1710000000,
+    "updated_at": 1710000000,
+    "submitted_at": 1710000000
+  },
+  "email_sent": true
+}
+```
+
+After saving the submission, the backend attempts to email the tournament
+organizer. The save still succeeds if email sending fails; in that case
+`email_sent` is `false` and the failure is logged server-side.
+
+Current inline errors:
+
+```json
+{
+  "is_ok": false,
+  "type": "upsert_tournament_submission",
+  "error": "Access denied"
+}
+```
+
+Possible error messages include:
+
+- `Authentication required`
+- `Access denied`
+- `Required data is missing`
+- `Invalid tournament_id`
+- `Tournament not found`
+
 ### update_user_role
 
 Updates another user's role. The authenticated user must have the `admin` role.

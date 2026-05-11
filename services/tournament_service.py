@@ -1,9 +1,12 @@
 import time
+import logging
 from datetime import datetime
 from bson import ObjectId
 from bson.errors import InvalidId
 from dispatchers.authentication.roles import has_role
 from dispatchers.utils.serializers import serialize_mongo_document, serialize_public_user
+
+logger = logging.getLogger(__name__)
 ALLOWED_STATUSES = {"Draft", "Registration", "Running", "Finished"}
 TOURNAMENT_PUBLIC_FIELDS = {
     "_id": 1,
@@ -247,3 +250,79 @@ class TournamentService:
         )
 
         return await get_tournament(db, tournament_object_id)
+
+    @staticmethod
+    async def upsert_submission(db, data, user, email_sender=None):
+        if not has_role(user, "team"):
+            raise Exception("Access denied")
+
+        required_fields = ("tournament_id", "repository_url", "video_demo_url")
+        if any(not data.get(field) for field in required_fields):
+            raise Exception("Required data is missing")
+
+        try:
+            tournament_object_id = ObjectId(data.get("tournament_id"))
+        except (InvalidId, TypeError):
+            raise Exception("Invalid tournament_id")
+
+        tournament = await db["tournaments"].find_one({"_id": tournament_object_id})
+        if not tournament:
+            raise Exception("Tournament not found")
+
+        team_id = user.get("_id")
+        if team_id not in (tournament.get("participant_ids") or []):
+            raise Exception("Access denied")
+
+        now = int(time.time())
+        submissions = db["tournament_submissions"]
+        existing_submission = await submissions.find_one(
+            {
+                "tournament_id": tournament_object_id,
+                "team_id": team_id,
+            }
+        )
+
+        updates = {
+            "repository_url": data["repository_url"],
+            "video_demo_url": data["video_demo_url"],
+            "live_demo_url": data.get("live_demo_url"),
+            "description": data.get("description"),
+            "updated_at": now,
+            "submitted_at": now,
+        }
+
+        if existing_submission:
+            await submissions.update_one(
+                {"_id": existing_submission["_id"]},
+                {"$set": updates},
+            )
+            existing_submission.update(updates)
+            submission = existing_submission
+        else:
+            submission = {
+                "tournament_id": tournament_object_id,
+                "team_id": team_id,
+                **updates,
+                "created_at": now,
+            }
+            result = await submissions.insert_one(submission)
+            submission["_id"] = result.inserted_id
+
+        email_sent = False
+        if email_sender:
+            try:
+                organizer = await db["users"].find_one({"_id": tournament.get("created_by")})
+                await email_sender(
+                    tournament=tournament,
+                    organizer=organizer,
+                    team=user,
+                    submission=submission,
+                )
+                email_sent = True
+            except Exception:
+                logger.exception("Failed to send tournament submission notification")
+
+        return {
+            "submission": serialize_mongo_document(submission),
+            "email_sent": email_sent,
+        }
