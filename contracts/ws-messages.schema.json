@@ -1,0 +1,519 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sflu.local/contracts/ws-messages.schema.json",
+  "title": "SFLU WebSocket Messages",
+  "type": "object",
+  "$defs": {
+    "role": {
+      "type": "string",
+      "enum": ["admin", "team", "jury", "organizer"]
+    },
+    "tournamentStatus": {
+      "type": "string",
+      "enum": ["Draft", "Registration", "Running", "Finished"]
+    },
+    "publicUser": {
+      "type": "object",
+      "properties": {
+        "_id": { "type": "string" },
+        "email": { "type": "string" },
+        "full_name": { "type": "string" },
+        "login": { "type": "string" },
+        "role": { "$ref": "#/$defs/role" }
+      },
+      "additionalProperties": false
+    },
+    "tournament": {
+      "type": "object",
+      "required": ["_id", "title", "created_by", "status", "created_at"],
+      "properties": {
+        "_id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": ["string", "null"] },
+        "created_by": { "type": "string" },
+        "start_date": { "type": ["string", "null"] },
+        "end_date": { "type": ["string", "null"] },
+        "participant_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "status": { "$ref": "#/$defs/tournamentStatus" },
+        "created_at": { "type": "integer" },
+        "updated_at": { "type": "integer" }
+      },
+      "additionalProperties": true
+    },
+    "tournamentDetail": {
+      "type": "object",
+      "required": ["_id", "title", "created_by", "status", "created_at", "participants"],
+      "properties": {
+        "_id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": ["string", "null"] },
+        "created_by": { "type": "string" },
+        "start_date": { "type": ["string", "null"] },
+        "end_date": { "type": ["string", "null"] },
+        "participants": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/publicUser" }
+        },
+        "status": { "$ref": "#/$defs/tournamentStatus" },
+        "created_at": { "type": "integer" },
+        "updated_at": { "type": "integer" }
+      },
+      "additionalProperties": true
+    },
+    "tournamentSubmission": {
+      "type": "object",
+      "required": [
+        "_id",
+        "tournament_id",
+        "team_id",
+        "repository_url",
+        "video_demo_url",
+        "created_at",
+        "updated_at",
+        "submitted_at"
+      ],
+      "properties": {
+        "_id": { "type": "string" },
+        "tournament_id": { "type": "string" },
+        "team_id": { "type": "string" },
+        "repository_url": { "type": "string" },
+        "video_demo_url": { "type": "string" },
+        "live_demo_url": { "type": ["string", "null"] },
+        "description": { "type": ["string", "null"] },
+        "created_at": { "type": "integer" },
+        "updated_at": { "type": "integer" },
+        "submitted_at": { "type": "integer" }
+      },
+      "additionalProperties": true
+    },
+    "standardErrorResponse": {
+      "type": "object",
+      "required": ["is_ok", "type", "error", "err_code"],
+      "properties": {
+        "is_ok": { "type": "boolean", "const": false },
+        "type": { "type": "string" },
+        "error": { "type": "string" },
+        "err_code": {
+          "type": "string",
+          "pattern": "^#[A-Z0-9_]+$"
+        }
+      },
+      "additionalProperties": true
+    },
+    "inlineErrorResponse": {
+      "type": "object",
+      "required": ["is_ok", "type", "error"],
+      "not": {
+        "required": ["err_code"]
+      },
+      "properties": {
+        "is_ok": { "type": "boolean", "const": false },
+        "type": { "type": "string" },
+        "error": { "type": "string" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "oneOf": [
+    {
+      "title": "HandshakeRequest",
+      "type": "object",
+      "required": ["type", "client_public_key"],
+      "properties": {
+        "type": { "const": "handshake_request" },
+        "client_public_key": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "AuthRequest",
+      "type": "object",
+      "required": ["type", "password"],
+      "anyOf": [
+        { "required": ["email"] },
+        { "required": ["login"] },
+        { "required": ["username"] }
+      ],
+      "properties": {
+        "type": { "const": "auth" },
+        "email": { "type": "string", "format": "email" },
+        "login": { "type": "string" },
+        "username": { "type": "string" },
+        "password": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "AuthSuccessResponse",
+      "type": "object",
+      "required": ["is_ok", "type", "token", "auth_mode", "user"],
+      "properties": {
+        "is_ok": { "type": "boolean", "const": true },
+        "type": { "const": "auth" },
+        "token": { "type": "string" },
+        "auth_mode": { "const": "login" },
+        "user": { "$ref": "#/$defs/publicUser" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "RegisterAccountRequest",
+      "type": "object",
+      "required": ["type", "login", "password", "full_name"],
+      "properties": {
+        "type": { "const": "register_account" },
+        "login": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 30,
+          "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$"
+        },
+        "password": { "type": "string", "minLength": 6 },
+        "full_name": { "type": "string" },
+        "email": { "type": "string", "format": "email" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "RegisterAccountSuccessResponse",
+      "type": "object",
+      "required": ["is_ok", "type", "token", "auth_mode", "user"],
+      "properties": {
+        "is_ok": { "type": "boolean", "const": true },
+        "type": { "const": "register_account" },
+        "token": { "type": "string" },
+        "auth_mode": { "const": "register" },
+        "user": { "$ref": "#/$defs/publicUser" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "GetMeRequest",
+      "type": "object",
+      "required": ["type", "device_token"],
+      "properties": {
+        "type": { "const": "get_me" },
+        "device_token": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "GetMeSuccessResponse",
+      "type": "object",
+      "required": ["is_ok", "type", "token", "user"],
+      "properties": {
+        "is_ok": { "type": "boolean", "const": true },
+        "type": { "const": "get_me" },
+        "token": { "type": "string" },
+        "user": { "$ref": "#/$defs/publicUser" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "LogoutRequest",
+      "type": "object",
+      "required": ["type", "device_token"],
+      "properties": {
+        "type": { "const": "logout" },
+        "device_token": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "LogoutSuccessResponse",
+      "type": "object",
+      "required": ["is_ok", "type"],
+      "properties": {
+        "is_ok": { "type": "boolean", "const": true },
+        "type": { "const": "logout" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "CreateTournamentRequest",
+      "type": "object",
+      "required": ["type", "device_token", "title"],
+      "properties": {
+        "type": { "const": "create_tournament" },
+        "device_token": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": ["string", "null"] },
+        "start_date": { "type": ["string", "null"] },
+        "end_date": { "type": ["string", "null"] }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "CreateTournamentSuccessResponse",
+      "type": "object",
+      "required": ["is_ok", "type", "tournament"],
+      "properties": {
+        "is_ok": { "type": "boolean", "const": true },
+        "type": { "const": "create_tournament" },
+        "tournament": { "$ref": "#/$defs/tournament" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "UpdateTournamentRequest",
+      "type": "object",
+      "required": ["type", "device_token", "tournament_id"],
+      "properties": {
+        "type": { "const": "update_tournament" },
+        "device_token": { "type": "string" },
+        "tournament_id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": ["string", "null"] },
+        "start_date": { "type": ["string", "null"] },
+        "end_date": { "type": ["string", "null"] }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "UpdateTournamentSuccessResponse",
+      "type": "object",
+      "required": ["is_ok", "type", "tournament"],
+      "properties": {
+        "is_ok": { "type": "boolean", "const": true },
+        "type": { "const": "update_tournament" },
+        "tournament": { "$ref": "#/$defs/tournament" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "ChangeTournamentStatusRequest",
+      "type": "object",
+      "required": ["type", "device_token", "tournament_id", "status"],
+      "properties": {
+        "type": { "const": "change_tournament_status" },
+        "device_token": { "type": "string" },
+        "tournament_id": { "type": "string" },
+        "status": { "$ref": "#/$defs/tournamentStatus" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "ChangeTournamentStatusSuccessResponse",
+      "type": "object",
+      "required": ["is_ok", "type", "tournament"],
+      "properties": {
+        "is_ok": { "type": "boolean", "const": true },
+        "type": { "const": "change_tournament_status" },
+        "tournament": { "$ref": "#/$defs/tournamentDetail" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "GetTournamentsRequest",
+      "type": "object",
+      "required": ["type", "device_token"],
+      "properties": {
+        "type": { "const": "get_tournaments" },
+        "device_token": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "GetTournamentsSuccessResponse",
+      "type": "object",
+      "required": ["is_ok", "type", "tournaments"],
+      "properties": {
+        "is_ok": { "type": "boolean", "const": true },
+        "type": { "const": "get_tournaments" },
+        "tournaments": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/tournament" }
+        }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "GetTournamentRequest",
+      "type": "object",
+      "required": ["type", "device_token", "tournament_id"],
+      "properties": {
+        "type": { "const": "get_tournament" },
+        "device_token": { "type": "string" },
+        "tournament_id": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "GetTournamentSuccessResponse",
+      "type": "object",
+      "required": ["is_ok", "type", "tournament"],
+      "properties": {
+        "is_ok": { "type": "boolean", "const": true },
+        "type": { "const": "get_tournament" },
+        "tournament": { "$ref": "#/$defs/tournamentDetail" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "GetActualTournamentsRequest",
+      "type": "object",
+      "required": ["type", "device_token"],
+      "properties": {
+        "type": { "const": "get_actual_tournaments" },
+        "device_token": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "GetActualTournamentsSuccessResponse",
+      "type": "object",
+      "required": ["is_ok", "type", "tournaments"],
+      "properties": {
+        "is_ok": { "type": "boolean", "const": true },
+        "type": { "const": "get_actual_tournaments" },
+        "tournaments": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/tournament" }
+        }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "AssignTournamentParticipantsRequest",
+      "type": "object",
+      "required": ["type", "device_token", "tournament_id", "participant_ids"],
+      "properties": {
+        "type": { "const": "assign_tournament_participants" },
+        "device_token": { "type": "string" },
+        "tournament_id": { "type": "string" },
+        "participant_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "AssignTournamentParticipantsSuccessResponse",
+      "type": "object",
+      "required": ["is_ok", "type", "tournament"],
+      "properties": {
+        "is_ok": { "type": "boolean", "const": true },
+        "type": { "const": "assign_tournament_participants" },
+        "tournament": { "$ref": "#/$defs/tournament" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "UpsertTournamentSubmissionRequest",
+      "type": "object",
+      "required": ["type", "device_token", "tournament_id", "repository_url", "video_demo_url"],
+      "properties": {
+        "type": { "const": "upsert_tournament_submission" },
+        "device_token": { "type": "string" },
+        "tournament_id": { "type": "string" },
+        "repository_url": { "type": "string" },
+        "video_demo_url": { "type": "string" },
+        "live_demo_url": { "type": ["string", "null"] },
+        "description": { "type": ["string", "null"] }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "UpsertTournamentSubmissionSuccessResponse",
+      "type": "object",
+      "required": ["is_ok", "type", "submission", "email_sent"],
+      "properties": {
+        "is_ok": { "type": "boolean", "const": true },
+        "type": { "const": "upsert_tournament_submission" },
+        "submission": { "$ref": "#/$defs/tournamentSubmission" },
+        "email_sent": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "UpdateUserRoleRequest",
+      "type": "object",
+      "required": ["type", "device_token", "role"],
+      "anyOf": [
+        { "required": ["target_user_id"] },
+        { "required": ["user_id"] }
+      ],
+      "properties": {
+        "type": { "const": "update_user_role" },
+        "device_token": { "type": "string" },
+        "target_user_id": { "type": "string" },
+        "user_id": { "type": "string" },
+        "role": { "$ref": "#/$defs/role" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "UpdateUserRoleSuccessResponse",
+      "type": "object",
+      "required": ["is_ok", "type", "user"],
+      "properties": {
+        "is_ok": { "type": "boolean", "const": true },
+        "type": { "const": "update_user_role" },
+        "user": { "$ref": "#/$defs/publicUser" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "SearchUsersRequest",
+      "type": "object",
+      "required": ["type", "device_token"],
+      "properties": {
+        "type": { "const": "search_users" },
+        "device_token": { "type": "string" },
+        "purpose": {
+          "type": "string",
+          "enum": ["role_management", "tournament_participants"]
+        },
+        "query": { "type": "string" },
+        "search": { "type": "string" },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "SearchUsersSuccessResponse",
+      "type": "object",
+      "required": ["is_ok", "type", "users"],
+      "properties": {
+        "is_ok": { "type": "boolean", "const": true },
+        "type": { "const": "search_users" },
+        "users": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/publicUser" }
+        }
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "EchoRequest",
+      "type": "object",
+      "required": ["type", "message"],
+      "properties": {
+        "type": { "const": "echo" },
+        "message": {}
+      },
+      "additionalProperties": true
+    },
+    {
+      "title": "EchoSuccessResponse",
+      "type": "object",
+      "required": ["is_ok", "type", "message"],
+      "properties": {
+        "is_ok": { "type": "boolean", "const": true },
+        "type": { "const": "echo" },
+        "message": {}
+      },
+      "additionalProperties": true
+    },
+    { "$ref": "#/$defs/standardErrorResponse" },
+    { "$ref": "#/$defs/inlineErrorResponse" }
+  ]
+}

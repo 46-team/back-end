@@ -1,0 +1,8 @@
+fastapi
+aiofiles
+cryptography
+motor~=3.7.1
+pycryptodome
+uvicorn
+pymongo>=4.9,<5
+uvicorn[standard]
