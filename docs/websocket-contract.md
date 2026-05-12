@@ -196,7 +196,8 @@ Optional fields:
 
 Validation:
 
-- `login` must contain at least 3 characters after trimming.
+- `login` must contain from 3 to 30 characters after trimming.
+- `login` may contain Latin letters, digits, `.`, `_`, and `-`; it must start and end with a letter or digit.
 - `password` must contain at least 6 characters.
 - `email`, when provided, must be a valid email address.
 - `login` and `email` must be unique.
@@ -222,7 +223,9 @@ Successful response:
 Known errors:
 
 - `#INCOMPLETE_REQUEST`
+- `#INVALID_LOGIN`
 - `#INVALID_PASSWORD`
+- `#INVALID_EMAIL`
 - `#USER_ALREADY_EXISTS`
 
 ### get_me

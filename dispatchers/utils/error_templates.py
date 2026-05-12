@@ -150,6 +150,15 @@ async def err_invalid_password(proto: FGProto, ENCRYPTION_KEYS: dict, client: We
     )
 
 
+async def err_invalid_login(proto: FGProto, ENCRYPTION_KEYS: dict, client: WebSocket) -> None:
+    proto.Error(
+        proto,
+        "Login must be 3-30 characters and may contain only Latin letters, digits, '.', '_', and '-'. It must start and end with a letter or digit.",
+        ENCRYPTION_KEYS[client]['key'],
+        "INVALID_LOGIN"
+    )
+
+
 async def err_invalid_email(proto: FGProto, ENCRYPTION_KEYS: dict, client: WebSocket) -> None:
     proto.Error(
         proto,

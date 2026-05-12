@@ -165,7 +165,12 @@
       "required": ["type", "login", "password", "full_name"],
       "properties": {
         "type": { "const": "register_account" },
-        "login": { "type": "string", "minLength": 3 },
+        "login": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 30,
+          "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$"
+        },
         "password": { "type": "string", "minLength": 6 },
         "full_name": { "type": "string" },
         "email": { "type": "string", "format": "email" }
